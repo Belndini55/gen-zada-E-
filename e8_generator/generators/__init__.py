@@ -1,4 +1,4 @@
-"""Inicjalizacja wszystkich 12 działów generatorów zadań CKE E8."""
+"""Inicjalizacja wszystkich 12 działów generatorów zadań CKE E8 oraz rozszerzonego archiwum CKE."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from . import (
     g10_stereometria,
     g11_statystyka,
     g12_prawdop,
+    g13_cke_archiwum,
 )
 from .base import REGISTRY
 

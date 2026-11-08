@@ -22,18 +22,19 @@ _DIAG_CACHE_DIR = Path(tempfile.gettempdir()) / "e8_generator_diag_cache"
 _DIAG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 _DIAG_CACHE: Dict[str, Tuple[str, int, int]] = {}
 
-# Kolorystyka techniczna CKE (świetna zarówno na ekranie, jak i w czarno-białym druku)
+# Kolorystyka techniczna w oficjalnej palecie CKE E8 (oliwkowo-zielona + czytelny druk czarno-biały)
 INK = "#111827"
 MUTED = "#4B5563"
-GRID_COL = "#CBD5E1"
-FILL_LIGHT = "#E2E8F0"
-FILL_WATER = "#DBEAFE"
-BAR_FILL = "#64748B"
+GRID_COL = "#C8D0D8"
+FILL_LIGHT = "#E3EED1"
+FILL_WATER = "#D6EAF8"
+BAR_FILL = "#9EC06B"
+PIE_COLORS = ("#A8C976", "#F4C97A", "#8BB8D8", "#E69A8D", "#C8B7DC")
 
 
 def render_diagram(spec: DiagramSpec) -> Tuple[str, int, int]:
     """Renderuje DiagramSpec do pliku PNG i zwraca (posix_path, width_px, height_px)."""
-    payload = json.dumps({"kind": spec.kind, "params": spec.params, "caption": spec.caption}, sort_keys=True, ensure_ascii=False)
+    payload = json.dumps({"kind": spec.kind, "params": spec.params, "caption": spec.caption, "v": 2}, sort_keys=True, ensure_ascii=False)
     digest = hashlib.md5(payload.encode("utf-8")).hexdigest()[:16]
     if digest in _DIAG_CACHE:
         p_str, w_px, h_px = _DIAG_CACHE[digest]
@@ -49,10 +50,13 @@ def render_diagram(spec: DiagramSpec) -> Tuple[str, int, int]:
         "isosceles_triangle": _draw_isosceles_triangle,
         "parallel_angles": _draw_parallel_angles,
         "trapezoid": _draw_trapezoid,
+        "rhombus_diagonals": _draw_rhombus_diagonals,
         "circle_chord": _draw_circle_chord,
         "prism_net": _draw_prism_net,
         "cuboid_water": _draw_cuboid_water,
         "bar_chart": _draw_bar_chart,
+        "pie_chart": _draw_pie_chart,
+        "travel_graph": _draw_travel_graph,
     }
     fn = dispatch.get(spec.kind, _draw_number_line)
     fig = fn(spec.params)
@@ -549,3 +553,119 @@ def _draw_bar_chart(p: dict) -> plt.Figure:
 
     fig.tight_layout()
     return fig
+
+
+def _draw_rhombus_diagonals(p: dict) -> plt.Figure:
+    """Romb ABCD z zaznaczonymi przekątnymi AC i BD przecinającymi się pod kątem prostym w punkcie S (styl CKE)."""
+    side_lbl = p.get("side_label", "")
+    diag_ac = p.get("ac_label", "")
+
+    hx, hy = 2.2, 1.35
+    fig, ax = plt.subplots(figsize=(3.5, 2.35))
+    ax.set_xlim(-hx - 0.65, hx + 0.65)
+    ax.set_ylim(-hy - 0.55, hy + 0.55)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    pts = [(-hx, 0.0), (0.0, -hy), (hx, 0.0), (0.0, hy)]
+    poly = patches.Polygon(pts, closed=True, facecolor=FILL_LIGHT, edgecolor=INK, lw=1.45, alpha=0.55)
+    ax.add_patch(poly)
+
+    ax.plot([-hx, hx], [0, 0], color=INK, lw=1.05, ls="--")
+    ax.plot([0, 0], [-hy, hy], color=INK, lw=1.05, ls="--")
+
+    sq = 0.26
+    ax.plot([sq, sq, 0], [0, sq, sq], color=INK, lw=0.9)
+    ax.plot([sq * 0.48], [sq * 0.48], marker="o", markersize=1.9, color=INK)
+    ax.text(-0.2, 0.2, "S", fontsize=9, style="italic", color=INK)
+
+    ax.text(-hx - 0.25, 0, "A", fontsize=10, style="italic", ha="center", va="center", color=INK)
+    ax.text(0, -hy - 0.25, "B", fontsize=10, style="italic", ha="center", va="center", color=INK)
+    ax.text(hx + 0.25, 0, "C", fontsize=10, style="italic", ha="center", va="center", color=INK)
+    ax.text(0, hy + 0.25, "D", fontsize=10, style="italic", ha="center", va="center", color=INK)
+
+    if side_lbl:
+        ax.text(hx * 0.55 + 0.15, hy * 0.55 + 0.14, side_lbl, fontsize=9.2, ha="left", va="bottom", color=INK)
+    if diag_ac:
+        ax.text(-hx * 0.48, -0.22, diag_ac, fontsize=8.8, ha="center", va="top", color=INK)
+
+    return fig
+
+
+def _draw_pie_chart(p: dict) -> plt.Figure:
+    """Diagram kołowy z procentami w kolorystyce arkuszy CKE (np. CKE Maj 2022 / Maj 2026)."""
+    labels = p.get("labels", ["A", "B", "C", "D"])
+    percents = p.get("percents", [35, 30, 20, 15])
+    hide_index = p.get("hide_percent_index", None)
+
+    fig, ax = plt.subplots(figsize=(4.1, 2.55))
+    cols = [PIE_COLORS[i % len(PIE_COLORS)] for i in range(len(labels))]
+
+    wedges, _ = ax.pie(
+        percents,
+        startangle=90,
+        counterclock=False,
+        colors=cols,
+        wedgeprops=dict(edgecolor=INK, linewidth=1.05),
+    )
+
+    # Etykiety na zewnątrz lub wewnątrz wycinków
+    cum_deg = 90.0
+    for idx, (lbl, pct) in enumerate(zip(labels, percents)):
+        span = pct * 3.6
+        mid_deg = cum_deg - span / 2.0
+        cum_deg -= span
+        rad = math.radians(mid_deg)
+
+        pct_txt = "?%" if (hide_index is not None and int(hide_index) == idx) else f"{_fmt_pl(pct)}%"
+        # Procent w środku wycinka, nazwa na zewnątrz z krótką kreską
+        if pct >= 12:
+            ax.text(0.58 * math.cos(rad), 0.58 * math.sin(rad), pct_txt,
+                    ha="center", va="center", fontsize=8.6, fontweight="bold", color=INK)
+            lx, ly = 1.24 * math.cos(rad), 1.16 * math.sin(rad)
+            ax.plot([0.96 * math.cos(rad), 1.13 * math.cos(rad)],
+                    [0.96 * math.sin(rad), 1.10 * math.sin(rad)], color=MUTED, lw=0.8)
+            ha = "left" if math.cos(rad) >= 0 else "right"
+            ax.text(lx, ly, lbl, ha=ha, va="center", fontsize=8.5, color=INK)
+        else:
+            lx, ly = 1.25 * math.cos(rad), 1.18 * math.sin(rad)
+            ax.plot([0.96 * math.cos(rad), 1.14 * math.cos(rad)],
+                    [0.96 * math.sin(rad), 1.11 * math.sin(rad)], color=MUTED, lw=0.8)
+            ha = "left" if math.cos(rad) >= 0 else "right"
+            ax.text(lx, ly, f"{lbl} ({pct_txt})", ha=ha, va="center", fontsize=8.4, color=INK)
+
+    ax.set_aspect("equal")
+    ax.set_xlim(-1.95, 1.95)
+    ax.set_ylim(-1.32, 1.32)
+    return fig
+
+
+def _draw_travel_graph(p: dict) -> plt.Figure:
+    """Wykres zależności drogi od czasu s(t) z postojem na kratce CKE."""
+    times = p.get("times", [0, 2, 3, 5])  # w godzinach lub minutach
+    dists = p.get("dists", [0, 30, 30, 60])  # w km lub m
+    xlabel = p.get("xlabel", "Czas [h]")
+    ylabel = p.get("ylabel", "Odległość [km]")
+    x_step = int(p.get("x_step", 1))
+    y_step = int(p.get("y_step", 10))
+
+    fig, ax = plt.subplots(figsize=(4.2, 2.45))
+    ax.plot(times, dists, color="#537A26", lw=2.1, marker="o", markersize=4.8, markerfacecolor=INK, markeredgecolor=INK, zorder=4)
+
+    xmax = max(times) + x_step
+    ymax = max(dists) + y_step
+    ax.set_xlim(0, xmax)
+    ax.set_ylim(0, ymax)
+    ax.set_xticks(range(0, int(xmax) + 1, x_step))
+    ax.set_yticks(range(0, int(ymax) + 1, y_step))
+    ax.grid(True, color=GRID_COL, linestyle="-", linewidth=0.75, zorder=1)
+    ax.tick_params(labelsize=8.4, colors=INK)
+    ax.set_xlabel(xlabel, fontsize=8.6, color=INK)
+    ax.set_ylabel(ylabel, fontsize=8.6, color=INK)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(INK)
+    ax.spines["bottom"].set_color(INK)
+    fig.tight_layout()
+    return fig
+

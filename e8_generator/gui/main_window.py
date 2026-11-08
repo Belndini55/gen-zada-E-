@@ -1,11 +1,10 @@
-"""Główne okno aplikacji desktopowej Generator Zadań E8 – Matematyka (PyQt6)."""
+"""Główne okno aplikacji desktopowej Generator Zadań E8 – Matematyka (PyQt6, v2 – CKE OMAP-100)."""
 
 from __future__ import annotations
 
 import datetime
-import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QKeySequence
@@ -32,30 +31,37 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from ..cke_archive import (
+    EMPIRICAL_STATS,
+    HISTORICAL_CKE_EXAMS,
+    SESSION_BY_ID,
+    compute_active_topic_probabilities,
+)
 from ..engine import generate_exam_sheet, replace_single_task
 from ..models import (
     CLOSED_SUBTYPES,
-    PRESETS,
     PRESET_BY_ID,
+    PRESETS,
     SUBTYPE_LABELS,
     TOPICS,
     ExamConfig,
     ExamSheet,
 )
 from ..pdf_exporter import build_exam_pdf_bytes, build_key_pdf_bytes
+from .archive_widget import CKEArchiveStatsWidget
 from .preview_widget import PdfPreviewWidget
 from .styles import APP_STYLESHEET
 from .task_list_widget import TaskListWidget
 
 
 class MainWindow(QMainWindow):
-    """Główne okno programu z formularzem konfiguracji po lewej i podglądem PDF po prawej."""
+    """Główne okno programu z formularzem konfiguracji CKE po lewej i podglądem PDF / statystyką po prawej."""
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Generator Zadań E8 – Matematyka (styl i poziom CKE)")
-        self.resize(1380, 880)
-        self.setMinimumSize(1040, 680)
+        self.setWindowTitle("Generator Zadań E8 – Matematyka (wzorzec i statystyka CKE 2019–2026)")
+        self.resize(1420, 900)
+        self.setMinimumSize(1080, 700)
         self.setStyleSheet(APP_STYLESHEET)
 
         self._current_sheet: Optional[ExamSheet] = None
@@ -68,8 +74,9 @@ class MainWindow(QMainWindow):
 
         self._build_ui()
         self._setup_shortcuts()
+        self._refresh_live_topic_percentages()
 
-        # Wygeneruj od razu pierwszy przykładowy arkusz po uruchomieniu, żeby okno nie było puste
+        # Wygeneruj od razu pierwszy przykładowy arkusz po uruchomieniu
         self.generate_new_sheet()
 
     # ------------------------------------------------------------------
@@ -90,8 +97,8 @@ class MainWindow(QMainWindow):
 
         # ================= LEWY PANEL: FORMULARZ KONFIGURACJI =================
         left_panel = QWidget()
-        left_panel.setMinimumWidth(455)
-        left_panel.setMaximumWidth(530)
+        left_panel.setMinimumWidth(525)
+        left_panel.setMaximumWidth(610)
         left_vbox = QVBoxLayout(left_panel)
         left_vbox.setContentsMargins(0, 0, 0, 0)
         left_vbox.setSpacing(8)
@@ -108,14 +115,17 @@ class MainWindow(QMainWindow):
         # Nagłówek aplikacji w lewym panelu
         app_hdr = QLabel("Generator Zadań E8 – Matematyka")
         app_hdr.setObjectName("HeaderTitle")
-        app_sub = QLabel("Twórz pełne arkusze próbne CKE lub zestawy z wybranych działów wraz z kluczem odpowiedzi.")
+        app_sub = QLabel(
+            "Autentyczna szata graficzna CKE (OMAP-100) oraz rozkład prawdopodobieństwa działów "
+            "wyznaczony z 12 oficjalnych arkuszy CKE (2019–2026)."
+        )
         app_sub.setObjectName("MutedLabel")
         app_sub.setWordWrap(True)
         form_lay.addWidget(app_hdr)
         form_lay.addWidget(app_sub)
 
         # 1. Układ arkusza (Preset)
-        grp_preset = QGroupBox("1. Układ arkusza / szybki szablon")
+        grp_preset = QGroupBox("1. Układ arkusza / szybki szablon CKE")
         gp_lay = QVBoxLayout(grp_preset)
         gp_lay.setSpacing(6)
 
@@ -133,14 +143,36 @@ class MainWindow(QMainWindow):
         gp_lay.addWidget(self._lbl_preset_desc)
         form_lay.addWidget(grp_preset)
 
-        # 2. Zakres tematyczny (Działy E8)
-        grp_topics = QGroupBox("2. Z jakich tematów generować zadania?")
+        # 2. Zakres tematyczny (Działy E8 + żywe % CKE)
+        grp_topics = QGroupBox("2. Działy E8 i rozkład prawdopodobieństwa CKE")
         gt_lay = QVBoxLayout(grp_topics)
         gt_lay.setSpacing(6)
 
-        self._chk_all_topics = QCheckBox("Cały materiał E8 (wszystkie działy jak na egzaminie)")
+        dist_form = QFormLayout()
+        dist_form.setSpacing(5)
+        self._combo_dist = QComboBox()
+        self._combo_dist.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self._combo_dist.setMinimumContentsLength(18)
+        self._combo_dist.addItem(
+            "Statystyka CKE 2019–2026 (równa redystrybucja %)",
+            userData="cke_probabilistic",
+        )
+        for sess in HISTORICAL_CKE_EXAMS:
+            self._combo_dist.addItem(
+                f"Wzorzec 1:1 sesji: {sess.name} ({sess.total_tasks} zad.)",
+                userData=f"mirror_session:{sess.session_id}",
+            )
+        self._combo_dist.addItem(
+            "Równy udział każdego aktywnego działu (1/N)",
+            userData="uniform",
+        )
+        self._combo_dist.currentIndexChanged.connect(self._on_distribution_mode_changed)
+        dist_form.addRow("Tryb rozkładu:", self._combo_dist)
+        gt_lay.addLayout(dist_form)
+
+        self._chk_all_topics = QCheckBox("Cały materiał E8 (wszystkie 12 działów wg wag CKE)")
         self._chk_all_topics.setChecked(True)
-        self._chk_all_topics.setStyleSheet("font-weight: 700; color: #1E3A8A;")
+        self._chk_all_topics.setStyleSheet("font-weight: 700; color: #3D5E18;")
         self._chk_all_topics.toggled.connect(self._on_all_topics_toggled)
         gt_lay.addWidget(self._chk_all_topics)
 
@@ -171,16 +203,26 @@ class MainWindow(QMainWindow):
         gt_lay.addLayout(quick_topic_btns)
 
         topics_grid = QGridLayout()
-        topics_grid.setHorizontalSpacing(10)
+        topics_grid.setHorizontalSpacing(8)
         topics_grid.setVerticalSpacing(3)
         for idx, t_info in enumerate(TOPICS):
             chk = QCheckBox(t_info.short_name)
             chk.setChecked(True)
-            chk.setToolTip(f"{t_info.name}\n{t_info.description}")
+            base_pct = EMPIRICAL_STATS[t_info.id].base_probability * 100.0
+            chk.setToolTip(
+                f"{t_info.name}\n{t_info.description}\n"
+                f"Empiryczny udział w arkuszach CKE (2019–2026): {base_pct:.2f}%"
+            )
             chk.toggled.connect(self._on_individual_topic_toggled)
             self._topic_checks[t_info.id] = chk
             topics_grid.addWidget(chk, idx // 2, idx % 2)
         gt_lay.addLayout(topics_grid)
+
+        self._lbl_redistribution = QLabel()
+        self._lbl_redistribution.setObjectName("RedistributionBanner")
+        self._lbl_redistribution.setWordWrap(True)
+        gt_lay.addWidget(self._lbl_redistribution)
+
         form_lay.addWidget(grp_topics)
 
         # 3. Typy, liczba zadań i poziom trudności
@@ -193,19 +235,19 @@ class MainWindow(QMainWindow):
 
         self._spin_closed = QSpinBox()
         self._spin_closed.setRange(0, 40)
-        self._spin_closed.setValue(15)
+        self._spin_closed.setValue(PRESETS[0].closed_count)
         self._spin_closed.valueChanged.connect(self._on_counts_manually_changed)
         counts_form.addRow("Zadania zamknięte (po 1 pkt):", self._spin_closed)
 
         self._spin_open2 = QSpinBox()
         self._spin_open2.setRange(0, 15)
-        self._spin_open2.setValue(3)
+        self._spin_open2.setValue(PRESETS[0].open_2pt_count)
         self._spin_open2.valueChanged.connect(self._on_counts_manually_changed)
         counts_form.addRow("Zadania otwarte krótkie (0–2 pkt):", self._spin_open2)
 
         self._spin_open3 = QSpinBox()
         self._spin_open3.setRange(0, 15)
-        self._spin_open3.setValue(3)
+        self._spin_open3.setValue(PRESETS[0].open_3pt_count)
         self._spin_open3.valueChanged.connect(self._on_counts_manually_changed)
         counts_form.addRow("Zadania otwarte rozszerzone (0–3 pkt):", self._spin_open3)
 
@@ -237,8 +279,8 @@ class MainWindow(QMainWindow):
 
         form_lay.addWidget(grp_counts)
 
-        # 4. Metryczka i wygląd PDF
-        grp_pdf = QGroupBox("4. Nagłówek i opcje arkusza PDF")
+        # 4. Metryczka i wygląd PDF CKE OMAP-100
+        grp_pdf = QGroupBox("4. Szata graficzna CKE (OMAP-100) i opcje PDF")
         gpdf_lay = QVBoxLayout(grp_pdf)
         gpdf_lay.setSpacing(6)
 
@@ -248,12 +290,18 @@ class MainWindow(QMainWindow):
         self._edit_title = QLineEdit("EGZAMIN ÓSMOKLASISTY Z MATEMATYKI")
         meta_form.addRow("Tytuł główny:", self._edit_title)
 
-        self._edit_subtitle = QLineEdit("Arkusz próbny w stylu CKE")
+        self._edit_subtitle = QLineEdit("Arkusz w formule CKE (OMAP-100)")
         meta_form.addRow("Podtytuł:", self._edit_subtitle)
 
+        row_code_school = QHBoxLayout()
+        self._edit_exam_code = QLineEdit(PRESETS[0].exam_code)
+        self._edit_exam_code.setMaximumWidth(135)
+        self._edit_exam_code.setToolTip("Kod arkusza CKE na okładce, w stopce i kodzie kreskowym (np. OMAP-100-2605)")
         self._edit_school = QLineEdit("")
-        self._edit_school.setPlaceholderText("np. Klasa 8b / Szkoła Podstawowa nr 5")
-        meta_form.addRow("Szkoła / klasa:", self._edit_school)
+        self._edit_school.setPlaceholderText("np. Klasa 8b / SP nr 5")
+        row_code_school.addWidget(self._edit_exam_code)
+        row_code_school.addWidget(self._edit_school, 1)
+        meta_form.addRow("Kod CKE / szkoła:", row_code_school)
 
         row_ver_time = QHBoxLayout()
         self._edit_variant = QLineEdit("Wersja A")
@@ -261,7 +309,7 @@ class MainWindow(QMainWindow):
         self._spin_duration = QSpinBox()
         self._spin_duration.setRange(10, 240)
         self._spin_duration.setSuffix(" min")
-        self._spin_duration.setValue(125)
+        self._spin_duration.setValue(PRESETS[0].duration_minutes)
         row_ver_time.addWidget(self._edit_variant)
         row_ver_time.addWidget(QLabel("Czas:"))
         row_ver_time.addWidget(self._spin_duration)
@@ -271,7 +319,7 @@ class MainWindow(QMainWindow):
         self._edit_date = QLineEdit(datetime.date.today().strftime("%d.%m.%Y r."))
         self._edit_seed = QLineEdit("")
         self._edit_seed.setPlaceholderText("losowy")
-        self._edit_seed.setToolTip("Wpisz liczbę (np. 101), aby powtórzyć identyczny zestaw zadań.")
+        self._edit_seed.setToolTip("Wpisz liczbę (np. 2026), aby powtórzyć identyczny zestaw zadań.")
         self._edit_seed.setMaximumWidth(90)
         row_date_seed.addWidget(self._edit_date, 1)
         row_date_seed.addWidget(QLabel("Nr/Seed:"))
@@ -280,15 +328,19 @@ class MainWindow(QMainWindow):
 
         gpdf_lay.addLayout(meta_form)
 
-        self._chk_cover = QCheckBox("Strona tytułowa CKE (kod ucznia, PESEL, instrukcja)")
+        self._chk_cover = QCheckBox("Okładka CKE OMAP-100 (logo E8, KOD, PESEL, O-100, kod kreskowy)")
         self._chk_cover.setChecked(True)
         gpdf_lay.addWidget(self._chk_cover)
 
-        self._chk_grid = QCheckBox("Kratka do obliczeń i ramka „Odpowiedź” pod zadaniami otwartymi")
+        self._chk_grid = QCheckBox("Czerwona kratka skanera 5×5 mm z ostrzeżeniami pod zadaniami otwartymi")
         self._chk_grid.setChecked(True)
         gpdf_lay.addWidget(self._chk_grid)
 
-        self._chk_diagrams = QCheckBox("Rysunki pomocnicze (geometria, wykresy, układ współrzędnych)")
+        self._chk_answer_card = QCheckBox("Dołącz Kartę Odpowiedzi CKE (OMR + tabela egzaminatora) na końcu")
+        self._chk_answer_card.setChecked(True)
+        gpdf_lay.addWidget(self._chk_answer_card)
+
+        self._chk_diagrams = QCheckBox("Rysunki pomocnicze w kolorach CKE (geometria, wykresy, kratka)")
         self._chk_diagrams.setChecked(True)
         gpdf_lay.addWidget(self._chk_diagrams)
 
@@ -303,7 +355,7 @@ class MainWindow(QMainWindow):
         left_vbox.addWidget(form_scroll, 1)
 
         # Dolny przycisk główny "Generuj nowy arkusz"
-        self._btn_generate = QPushButton("Generuj nowy arkusz (Ctrl+G)")
+        self._btn_generate = QPushButton("Generuj nowy arkusz CKE (Ctrl+G)")
         self._btn_generate.setObjectName("PrimaryGenerateBtn")
         self._btn_generate.setCursor(Qt.CursorShape.PointingHandCursor)
         self._btn_generate.clicked.connect(self.generate_new_sheet)
@@ -311,13 +363,12 @@ class MainWindow(QMainWindow):
 
         splitter.addWidget(left_panel)
 
-        # ================= PRAWY PANEL: PODGLĄD I EKSPORT PDF =================
+        # ================= PRAWY PANEL: PODGLĄD, STATYSTYKA CKE I EKSPORT PDF =================
         right_panel = QWidget()
         right_vbox = QVBoxLayout(right_panel)
         right_vbox.setContentsMargins(0, 0, 0, 0)
         right_vbox.setSpacing(8)
 
-        # Pasek eksportu na górze prawego panelu
         export_bar = QFrame()
         export_bar.setObjectName("ExportBar")
         eb_lay = QHBoxLayout(export_bar)
@@ -330,40 +381,43 @@ class MainWindow(QMainWindow):
 
         btn_save_exam = QPushButton("Zapisz Arkusz PDF...")
         btn_save_exam.setObjectName("ExportBtn")
-        btn_save_exam.setToolTip("Zapisz plik PDF z samym arkuszem zadań dla ucznia")
+        btn_save_exam.setToolTip("Zapisz plik PDF z samym arkuszem zadań dla ucznia (szata CKE OMAP-100)")
         btn_save_exam.clicked.connect(self.save_exam_pdf)
         eb_lay.addWidget(btn_save_exam)
 
         btn_save_key = QPushButton("Zapisz Klucz PDF...")
         btn_save_key.setObjectName("ExportBtn")
-        btn_save_key.setToolTip("Zapisz plik PDF z kluczem odpowiedzi, rozwiązaniami krok po kroku i punktacją CKE")
+        btn_save_key.setToolTip("Zapisz plik PDF z kluczem odpowiedzi, rozkładem % CKE i rozwiązaniami krok po kroku")
         btn_save_key.clicked.connect(self.save_key_pdf)
         eb_lay.addWidget(btn_save_key)
 
         btn_save_both = QPushButton("Zapisz Komplet (2×PDF)...")
         btn_save_both.setObjectName("ExportBundleBtn")
-        btn_save_both.setToolTip("Zapisz jednocześnie dwa pliki PDF: arkusz zadań oraz klucz odpowiedzi")
+        btn_save_both.setToolTip("Zapisz jednocześnie dwa pliki PDF: arkusz zadań CKE oraz klucz odpowiedzi")
         btn_save_both.clicked.connect(self.save_both_pdfs)
         eb_lay.addWidget(btn_save_both)
 
         right_vbox.addWidget(export_bar)
 
-        # Zakładki podglądu
+        # 4 zakładki w prawym panelu
         self._tabs = QTabWidget()
         self._exam_preview = PdfPreviewWidget()
         self._key_preview = PdfPreviewWidget()
         self._task_list = TaskListWidget()
         self._task_list.replace_task_requested.connect(self._on_replace_single_task)
+        self._archive_stats = CKEArchiveStatsWidget()
+        self._archive_stats.mirror_session_requested.connect(self._on_mirror_session_requested)
 
-        self._tabs.addTab(self._exam_preview, "Podgląd Arkusza CKE (PDF)")
-        self._tabs.addTab(self._key_preview, "Podgląd Klucza i Rozwiązań (PDF)")
-        self._tabs.addTab(self._task_list, "Lista zadań (wymiana pojedynczych zadań)")
+        self._tabs.addTab(self._exam_preview, "Arkusz CKE (PDF)")
+        self._tabs.addTab(self._key_preview, "Klucz i Rozwiązania (PDF)")
+        self._tabs.addTab(self._task_list, "Lista zadań (wymiana)")
+        self._tabs.addTab(self._archive_stats, "Statystyka i Archiwum CKE")
 
         right_vbox.addWidget(self._tabs, 1)
         splitter.addWidget(right_panel)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([470, 910])
+        splitter.setSizes([540, 880])
 
         self._update_summary_badge()
 
@@ -377,6 +431,62 @@ class MainWindow(QMainWindow):
         act_save.setShortcut(QKeySequence("Ctrl+S"))
         act_save.triggered.connect(self.save_both_pdfs)
         self.addAction(act_save)
+
+    # ------------------------------------------------------------------
+    # Dynamiczne przeliczanie procentów działów CKE + równej redystrybucji
+    # ------------------------------------------------------------------
+    def _compute_ui_active_probabilities(self) -> Dict[str, float]:
+        checked_ids = [t.id for t in TOPICS if self._topic_checks[t.id].isChecked()]
+        if not checked_ids:
+            return {t.id: 0.0 for t in TOPICS}
+        mode = str(self._combo_dist.currentData() or "cke_probabilistic")
+        if mode == "uniform":
+            eq = 1.0 / len(checked_ids)
+            return {t.id: (eq if t.id in checked_ids else 0.0) for t in TOPICS}
+        return compute_active_topic_probabilities(checked_ids)
+
+    def _refresh_live_topic_percentages(self) -> None:
+        """Aktualizuje na żywo etykiety % na wszystkich 12 checkboxach oraz pasek wyjaśnienia redystrybucji."""
+        probs = self._compute_ui_active_probabilities()
+        checked_ids = [t.id for t in TOPICS if self._topic_checks[t.id].isChecked()]
+        n_active = len(checked_ids)
+        n_removed = len(TOPICS) - n_active
+        mode = str(self._combo_dist.currentData() or "cke_probabilistic")
+
+        for t_info in TOPICS:
+            chk = self._topic_checks[t_info.id]
+            p = probs.get(t_info.id, 0.0) * 100.0
+            if chk.isChecked():
+                pct_str = f"{p:.1f}%".replace(".", ",")
+                chk.setText(f"{t_info.short_name} ({pct_str})")
+            else:
+                chk.setText(f"{t_info.short_name} (0%)")
+
+        if n_active == 0:
+            self._lbl_redistribution.setText("Zaznacz co najmniej jeden dział, aby wyznaczyć rozkład zadań.")
+        elif mode == "uniform":
+            eq_pct = f"{100.0 / n_active:.1f}".replace(".", ",")
+            self._lbl_redistribution.setText(
+                f"Tryb równych wag: każdy z {n_active} zaznaczonych działów ma dokładnie {eq_pct}% szans."
+            )
+        elif n_removed == 0:
+            self._lbl_redistribution.setText(
+                "Aktywne wszystkie 12 działów: oryginalne empiryczne prawdopodobieństwa CKE (2019–2026)."
+            )
+        else:
+            removed_sum = sum(
+                EMPIRICAL_STATS[t.id].base_probability for t in TOPICS if not self._topic_checks[t.id].isChecked()
+            ) * 100.0
+            bonus_each = removed_sum / n_active
+            rem_s = f"{removed_sum:.1f}".replace(".", ",")
+            bon_s = f"{bonus_each:.2f}".replace(".", ",")
+            self._lbl_redistribution.setText(
+                f"Wykreślono {n_removed} z 12 działów (łącznie {rem_s}% CKE) → "
+                f"rozdzielono po równo +{bon_s}% na każdy z {n_active} aktywnych działów."
+            )
+
+        total_tasks_hint = self._spin_closed.value() + self._spin_open2.value() + self._spin_open3.value()
+        self._archive_stats.refresh_probabilities(probs, self._current_sheet, total_tasks_hint)
 
     # ------------------------------------------------------------------
     # Logika formularza i przełączników
@@ -396,21 +506,60 @@ class MainWindow(QMainWindow):
             self._spin_open2.setValue(preset.open_2pt_count)
             self._spin_open3.setValue(preset.open_3pt_count)
             self._spin_duration.setValue(preset.duration_minutes)
-            self._chk_cover.setChecked(preset.closed_count + preset.open_2pt_count + preset.open_3pt_count >= 14)
+            self._edit_exam_code.setText(preset.exam_code)
+            is_full = (preset.closed_count + preset.open_2pt_count + preset.open_3pt_count) >= 14
+            self._chk_cover.setChecked(is_full)
+            self._chk_answer_card.setChecked(is_full)
         finally:
             self._updating_preset_fields = False
         self._update_summary_badge()
+        self._refresh_live_topic_percentages()
+
+    def _on_distribution_mode_changed(self, _index: int) -> None:
+        mode = str(self._combo_dist.currentData() or "cke_probabilistic")
+        if mode.startswith("mirror_session:"):
+            sess_id = mode.split(":", 1)[1]
+            sess = SESSION_BY_ID.get(sess_id)
+            if sess:
+                self._updating_preset_fields = True
+                try:
+                    c_cnt = sess.closed_count
+                    o2_cnt = sum(1 for t in sess.tasks if t.points == 2)
+                    o3_cnt = sum(1 for t in sess.tasks if t.points >= 3)
+                    self._spin_closed.setValue(c_cnt)
+                    self._spin_open2.setValue(o2_cnt)
+                    self._spin_open3.setValue(o3_cnt)
+                    self._spin_duration.setValue(sess.duration_min)
+                    self._edit_exam_code.setText(sess.code)
+                    self._edit_subtitle.setText(f"Arkusz wzorowany 1:1 na sesji {sess.name}")
+                finally:
+                    self._updating_preset_fields = False
+                self._update_summary_badge()
+        self._refresh_live_topic_percentages()
+
+    def _on_mirror_session_requested(self, sess_id: str) -> None:
+        target_data = f"mirror_session:{sess_id}"
+        idx = self._combo_dist.findData(target_data)
+        if idx >= 0:
+            self._combo_dist.setCurrentIndex(idx)
+        self.generate_new_sheet()
+        self._tabs.setCurrentIndex(0)
 
     def _on_counts_manually_changed(self) -> None:
         if not self._updating_preset_fields:
-            # Przełącz listę na "Własna konfiguracja", jeśli użytkownik ręcznie zmienił liczby zadań
             idx_custom = self._combo_preset.findData("custom")
             if idx_custom >= 0 and self._combo_preset.currentIndex() != idx_custom:
                 self._combo_preset.blockSignals(True)
                 self._combo_preset.setCurrentIndex(idx_custom)
                 self._lbl_preset_desc.setText(PRESET_BY_ID["custom"].description)
                 self._combo_preset.blockSignals(False)
+            # Jeśli był aktywny tryb mirror_session, przełącz na cke_probabilistic przy ręcznej zmianie liczby zadań
+            if str(self._combo_dist.currentData() or "").startswith("mirror_session:"):
+                self._combo_dist.blockSignals(True)
+                self._combo_dist.setCurrentIndex(0)
+                self._combo_dist.blockSignals(False)
         self._update_summary_badge()
+        self._refresh_live_topic_percentages()
 
     def _update_summary_badge(self) -> None:
         c = self._spin_closed.value()
@@ -432,6 +581,7 @@ class MainWindow(QMainWindow):
         self._chk_all_topics.blockSignals(True)
         self._chk_all_topics.setChecked(state)
         self._chk_all_topics.blockSignals(False)
+        self._refresh_live_topic_percentages()
 
     def _select_only_geometry(self) -> None:
         geom_ids = {"uklad_wspolrzednych", "geometria_plaska", "geometria_przestrzenna"}
@@ -442,6 +592,7 @@ class MainWindow(QMainWindow):
         self._chk_all_topics.blockSignals(True)
         self._chk_all_topics.setChecked(False)
         self._chk_all_topics.blockSignals(False)
+        self._refresh_live_topic_percentages()
 
     def _select_only_algebra(self) -> None:
         alg_ids = {
@@ -459,12 +610,14 @@ class MainWindow(QMainWindow):
         self._chk_all_topics.blockSignals(True)
         self._chk_all_topics.setChecked(False)
         self._chk_all_topics.blockSignals(False)
+        self._refresh_live_topic_percentages()
 
     def _on_individual_topic_toggled(self) -> None:
         all_on = all(chk.isChecked() for chk in self._topic_checks.values())
         self._chk_all_topics.blockSignals(True)
         self._chk_all_topics.setChecked(all_on)
         self._chk_all_topics.blockSignals(False)
+        self._refresh_live_topic_percentages()
 
     # ------------------------------------------------------------------
     # Odczyt konfiguracji i generowanie arkusza
@@ -478,7 +631,7 @@ class MainWindow(QMainWindow):
             return None
 
         if self._chk_all_topics.isChecked():
-            selected_topics = [t.id for t in TOPICS]
+            selected_topics: List[str] = [t.id for t in TOPICS]
         else:
             selected_topics = [tid for tid, chk in self._topic_checks.items() if chk.isChecked()]
             if not selected_topics:
@@ -510,12 +663,14 @@ class MainWindow(QMainWindow):
         return ExamConfig(
             preset_id=str(self._combo_preset.currentData()),
             title=self._edit_title.text().strip() or "EGZAMIN ÓSMOKLASISTY Z MATEMATYKI",
-            subtitle=self._edit_subtitle.text().strip() or "Arkusz próbny w stylu CKE",
+            subtitle=self._edit_subtitle.text().strip() or "Arkusz w formule CKE (OMAP-100)",
+            exam_code=self._edit_exam_code.text().strip() or "OMAP-100-2605",
             school_or_group=self._edit_school.text().strip(),
             exam_date_str=self._edit_date.text().strip(),
             variant_code=self._edit_variant.text().strip() or "Wersja A",
             duration_minutes=self._spin_duration.value(),
             selected_topics=selected_topics,
+            distribution_mode=str(self._combo_dist.currentData() or "cke_probabilistic"),
             closed_count=c_cnt,
             open_2pt_count=o2_cnt,
             open_3pt_count=o3_cnt,
@@ -523,6 +678,7 @@ class MainWindow(QMainWindow):
             difficulty_mode=str(self._combo_diff.currentData()),
             include_cover_page=self._chk_cover.isChecked(),
             include_answer_grid_for_open=self._chk_grid.isChecked(),
+            include_answer_card=self._chk_answer_card.isChecked(),
             include_scratchpad_page=self._chk_scratchpad.isChecked(),
             include_diagrams=self._chk_diagrams.isChecked(),
             seed=seed_val,
@@ -560,9 +716,14 @@ class MainWindow(QMainWindow):
         self._exam_preview.set_pdf_bytes(self._exam_pdf_bytes)
         self._key_preview.set_pdf_bytes(self._key_pdf_bytes)
         self._task_list.set_sheet(sheet)
+        self._archive_stats.refresh_probabilities(
+            sheet.topic_probabilities or self._compute_ui_active_probabilities(),
+            sheet,
+            len(sheet.tasks),
+        )
 
         self._lbl_status.setText(
-            f"{sheet.config.variant_code} · Zestaw #{sheet.used_seed} · "
+            f"{sheet.config.exam_code} · {sheet.config.variant_code} · Zestaw #{sheet.used_seed} · "
             f"{len(sheet.tasks)} zadań ({len(sheet.closed_tasks)} zamkn. + {len(sheet.open_tasks)} otw.) · "
             f"{sheet.total_points} pkt"
         )

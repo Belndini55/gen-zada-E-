@@ -1,65 +1,80 @@
-# Generator Zadań E8 – Matematyka (styl i poziom CKE)
+# Generator Zadań E8 – Matematyka (wzorzec i statystyka CKE 2019–2026)
 
-Lokalny, okienkowy program w języku **Python (PyQt6)** do generowania arkuszy próbnych oraz zestawów zadań z matematyki na poziomie **Egzaminu Ósmoklasisty (E8)** – wzorowany bezpośrednio na autentycznych arkuszach Centralnej Komisji Egzaminacyjnej (CKE) z lat 2019–2026.
-
----
-
-## Najważniejsze możliwości programu
-
-- **Wygodny interfejs okienkowy (PyQt6)**:
-  - gotowe szablony jednym kliknięciem:
-    - **Pełny arkusz CKE 2025/2026** (21 zadań · 30 pkt · 125 min),
-    - **Pełny arkusz CKE Maj 2026** (20 zadań · 30 pkt · 125 min),
-    - **Arkusz CKE z lat 2021–2024** (19 zadań · 25 pkt · 100 min),
-    - **Szybki sprawdzian / kartkówka** (10 zadań · 13 pkt · 45 min),
-  - **pełna własna konfiguracja**: wybór konkretnych działów lub całego materiału E8, dowolna liczba zadań zamkniętych (1 pkt), otwartych krótkich (0–2 pkt) i rozszerzonych (0–3 pkt), filtrowanie form zadań zamkniętych (`ABCD`, `Prawda/Fałsz`, `A/B + C/D`, `Tak/Nie + uzasadnienie 1/2/3`) oraz wybór poziomu trudności.
-- **60 parametrycznych wzorców zadań z 12 działów E8** (każde losowanie generuje nowe, spójne matematycznie dane liczbowe oraz realistyczne dystraktory wzorowane na błędach egzaminacyjnych CKE):
-  1. Liczby, ułamki, podzielność i oś liczbowa
-  2. Procenty, obniżki cen i proporcje
-  3. Potęgi i notacja wykładnicza
-  4. Pierwiastki kwadratowe i sześcienne
-  5. Wyrażenia algebraiczne
-  6. Równania i zadania tekstowe
-  7. Prędkość, droga, czas i obliczenia zegarowe
-  8. Układ współrzędnych na płaszczyźnie
-  9. Geometria płaska (kąty, trójkąty, czworokąty, okrąg, tw. Pitagorasa)
-  10. Geometria przestrzenna (graniastosłupy, ostrosłupy, siatki brył, poziom wody)
-  11. Statystyka, tabele i diagramy słupkowe
-  12. Prawdopodobieństwo i kombinatoryka
-- **Dynamiczne rysunki pomocnicze w stylu CKE**: osie liczbowe, układy współrzędnych z kratką, trójkąty, trapezy, okrąg z cięciwą, siatki graniastosłupów ze strzałkami wymiarowymi, prostopadłościenne akwarium z wodą oraz diagramy słupkowe.
-- **Podgląd na żywo i eksport do PDF (styl CKE)**:
-  - **Arkusz dla ucznia PDF** – strona tytułowa z kratkami na KOD UCZNIA i PESEL, instrukcja dla zdającego, tabele `P/F` i `Tak/Nie + ponieważ 1/2/3`, kratka 5×5 mm na obliczenia i pole `Odpowiedź:` w zadaniach otwartych, numeracja `Strona X z Y`.
-  - **Osobny Klucz Odpowiedzi i Rozwiązań PDF** – tabela szybkiego sprawdzania zadań zamkniętych, pełne rozwiązania krok po kroku oraz schemat punktowania CKE (`1 pkt / 2 pkt / 3 pkt`) dla zadań otwartych.
-  - **Wymiana pojedynczego zadania** – na karcie *Lista zadań* możesz wymienić dowolne pojedyncze zadanie bez losowania całego arkusza od nowa.
+Lokalna aplikacja okienkowa w języku **Python (`PyQt6`)** do generowania arkuszy egzaminacyjnych, sprawdzianów i zestawów treningowych na poziomie **Egzaminu Ósmoklasisty z matematyki** – w autentycznej szacie graficznej i kolorystyce arkuszy **CKE `OMAP-100`** oraz z empirycznym silnikiem prawdopodobieństwa opartym na **12 oficjalnych arkuszach CKE z lat 2019–2026 (240 zadań)**.
 
 ---
 
-## Jak uruchomić program lokalnie?
+## Najważniejsze funkcje (v2)
 
-Wymagany jest **Python 3.10 lub nowszy**.
+1. **Empiryczna statystyka prawdopodobieństwa CKE (2019–2026) + równa redystrybucja %**
+   - Wagi wszystkich 12 działów wyznaczane są bezpośrednio z katalogu **12 pełnych arkuszy CKE (240 zadań)** od kwietnia 2019 do czerwca 2026 (`e8_generator/cke_archive.py`):
+     - *Geometria płaska*: **20,0%** (48/240)
+     - *Liczby i ułamki*: **16,7%** (40/240)
+     - *Geometria przestrzenna (bryły)*: **10,0%** (24/240)
+     - *Procenty i proporcje*: **8,3%** (20/240)
+     - *Wyrażenia algebraiczne*: **7,5%** (18/240)
+     - *Równania i zadania tekstowe*: **7,5%** (18/240)
+     - *Statystyka, tabele i diagramy*: **7,1%** (17/240)
+     - *Potęgi i notacja wykładnicza*: **5,0%** (12/240)
+     - *Prędkość, droga, czas*: **5,0%** (12/240)
+     - *Prawdopodobieństwo i kombinatoryka*: **5,0%** (12/240)
+     - *Pierwiastki*: **4,6%** (11/240)
+     - *Układ współrzędnych*: **3,3%** (8/240)
+   - **Równa redystrybucja po wykreśleniu działów**: gdy w ustawieniach odznaczysz dowolne działy o łącznym udziale $R = \sum_{j \notin S} p_j$, ich procent jest **dzielony po równo** pomiędzy wszystkie pozostałe aktywne działy ($|S|$):
+     $$p'_i = p_i + \frac{R}{|S|}, \qquad \sum_{i \in S} p'_i = 100\%.$$
+   - **Losowanie kwot metodą Madowa (0,00% dryftu)**: systematyczne zaokrąglanie reszt gwarantuje, że w każdym pojedynczym arkuszu liczba zadań działu należy do $\{\lfloor N p'_i \rfloor, \lceil N p'_i \rceil\}$, a wartość oczekiwana w serii arkuszy jest dokładnie równa $p'_i$.
+   - **Wzorzec 1:1 wybranej sesji CKE**: możliwość wygenerowania arkusza odwzorowującego układ zadań wybranego egzaminu CKE (np. *CKE Maj 2026*, *CKE Maj 2025*, *CKE Maj 2024* itd.) ze świeżymi, losowymi danymi liczbowymi.
 
-### Sposób 1 – Szybkie uruchomienie dwuklikiem
-- **Windows**: kliknij dwukrotnie plik **`uruchom_windows.bat`** (przy pierwszym uruchomieniu skrypt sam utworzy środowisko `.venv` i pobierze wymagane biblioteki).
-- **Linux / macOS**: uruchom w terminalu:
-  ```bash
-  ./uruchom_linux_mac.sh
-  ```
+2. **Autentyczna szata wizualna i kolory arkuszy CKE `OMAP-100` (2025/2026)**
+   - **Okładka CKE `OMAP-100`**: oliwkowy znak `CKE` (`#D8DF8E`), szałwiowy pasek `WYPEŁNIA UCZEŃ` (`#C5D9A4`) nad kratkami `KOD UCZNIA` i `PESEL`, ramka `O-100` w czerwieni CKE (`#C00000`), centralna ramka z zielonym emblematem **`E8`** (`#7FA64E`), `Instrukcja dla ucznia` z zielonymi wyróżnieniami (`#537A26`) oraz wektorowy kod kreskowy `OMAP-100-XXXX`.
+   - **Strony wewnętrzne**: bezramkowe szałwiowo-oliwkowe paski nagłówków `Zadanie X. (0–Y)` (`#C5D9A4`), bliźniacze okienka wyboru `[ A | B ]` oraz `[ C | D ]`, tabele `P / F` oraz `Tak / Nie + ponieważ + 1 / 2 / 3`.
+   - **Zadania otwarte (`0–2`, `0–3`)**: łososiowo-czerwona kratka skanera `5 × 5 mm` (`#DA8A82`) w czarnej ramce z narożnymi znacznikami pozycjonującymi, pionowymi ostrzeżeniami na marginesach (*„Zapisy na marginesie poza ramką nie będą oceniane.”*) oraz okienkiem `Odpowiedź:`.
+   - **Karta odpowiedzi CKE (OMR)** na końcu arkusza + tabela punktacji zadań otwartych dla nauczyciela/egzaminatora.
+   - **Osobny PDF z Kluczem Odpowiedzi i Zasadami Oceniania**: szybki klucz, tabela pokrycia % działów CKE oraz pełne rozwiązania krok po kroku ze schematem punktowania CKE.
 
-### Sposób 2 – Ręczna instalacja w terminalu / wierszu poleceń
+3. **84 parametryczne szablony zadań CKE + 13 typów dynamicznych rysunków**
+   - Po **7 odrębnych wzorców zadań** w każdym z 12 działów E8 (miliardy wariantów liczbowych bez powtórzeń).
+   - Dynamiczne rysunki `260 DPI` w kolorystyce CKE: oś liczbowa, układ współrzędnych z kratką, trójkąty prostokątne i równoramienne, proste równoległe z sieczną, trapezy, romb z przekątnymi, okrąg z cięciwą, siatka graniastosłupa ze strzałkami wymiarowymi, akwarium z wodą, diagramy słupkowe, diagramy kołowe z procentami oraz wykresy drogi od czasu $s(t)$.
+
+4. **Wygodne okno graficzne (`PyQt6`)**
+   - Żywe etykiety `%` bezpośrednio na checkboxach wszystkich 12 działów aktualizowane natychmiast po każdym kliknięciu,
+   - Wbudowany podgląd wydruku A4 (Arkusz CKE oraz Klucz),
+   - Wymiana pojedynczego zadania jednym kliknięciem bez utraty pozostałych zadań,
+   - Zakładka **„Statystyka i Archiwum CKE”** z wbudowanym symulatorem Monte Carlo (`1 000 arkuszy`) oraz przeglądarką wszystkich 12 sesji CKE z lat 2019–2026.
+
+---
+
+## Szybkie uruchomienie
+
+### Windows
+Kliknij dwukrotnie plik **`uruchom_windows.bat`** (skrypt sam utworzy środowisko `.venv`, zainstaluje biblioteki i otworzy okno programu).
+
+### Linux / macOS
+```bash
+./uruchom_linux_mac.sh
+```
+
+### Ręczne uruchomienie z terminala
 ```bash
 python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# Linux / macOS:
-source .venv/bin/activate
-
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
 python main.py
 ```
 
-### Opcjonalny tryb linii poleceń (`--cli`)
-Możesz również wygenerować komplet PDF bezpośrednio z terminala:
+### Tryb wsadowy CLI (bez otwierania okna)
 ```bash
+# Pełny arkusz CKE 2026 (20 zadań, 30 pkt) wg statystyki CKE:
 python main.py --cli --out zestaw_probny --variant "Wersja A" --seed 2026
+
+# Arkusz wzorowany 1:1 na oficjalnej sesji CKE Maj 2026:
+python main.py --cli --out wzor_maj2026 --distribution mirror_session:cke_2026_05 --seed 101
 ```
-Program zapisze pliki `zestaw_probny_ARKUSZ.pdf` oraz `zestaw_probny_KLUCZ.pdf`.
+
+---
+
+## Testy automatyczne
+```bash
+python -m unittest discover -s tests -v
+```
