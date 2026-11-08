@@ -15,7 +15,7 @@ from .base import register_template
     subtype="ab_cd",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 5",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 5",
 )
 def gen_pierwiastki_ab_cd(rng):
     # Zdanie 1: sqrt(a^2) - sqrt(b^2) vs sqrt(a^2 - b^2)
@@ -78,7 +78,7 @@ def gen_pierwiastki_ab_cd(rng):
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2022 zad. 6",
+    cke_ref="Styl CKE – CKE Maj 2022 zad. 6",
     has_diagram=True,
 )
 def gen_szacowanie_pierwiastka_abcd(rng):
@@ -132,7 +132,7 @@ def gen_szacowanie_pierwiastka_abcd(rng):
     subtype="pf",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Czerwiec 2022 zad. 5",
+    cke_ref="Styl CKE – CKE Czerwiec 2022 zad. 5",
 )
 def gen_pierwiastki_pf(rng):
     # Pierwiastek sześcienny z liczby ujemnej i iloczyn pierwiastków
@@ -170,7 +170,7 @@ def gen_pierwiastki_pf(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2024 zad. 16",
+    cke_ref="Styl CKE – CKE Maj 2024 zad. 16",
 )
 def gen_pierwiastki_obwod_2pkt(rng):
     # Prostokąt ma boki sqrt(k1^2 * r) oraz sqrt(k2^2 * r). Uzasadnij, że obwód jest większy od T cm.
@@ -219,7 +219,7 @@ def gen_pierwiastki_obwod_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Czerwiec 2021 zad. 18",
+    cke_ref="Styl CKE – CKE Czerwiec 2021 zad. 18",
 )
 def gen_pierwiastki_kwadraty_3pkt(rng):
     # Dwa kwadraty K1 o polu P1 = m1^2 * r i K2 o polu P2 = m2^2 * r, zbudowano z nich prostokąt lub porównano obwody i przekątne

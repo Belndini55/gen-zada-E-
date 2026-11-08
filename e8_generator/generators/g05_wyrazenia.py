@@ -12,7 +12,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2022 zad. 7",
+    cke_ref="Styl CKE – CKE Maj 2022 zad. 7",
 )
 def gen_wartosc_wyrazenia_min_abcd(rng):
     # Dane jest wyrażenie (n^4 - c)/d lub (c - n^2)/d dla zestawu liczb {-3, -1, 0, 2}
@@ -68,7 +68,7 @@ def gen_wartosc_wyrazenia_min_abcd(rng):
     subtype="abcd",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 8",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 8",
 )
 def gen_opis_slowny_abcd(rng):
     a = rng.randint(3, 6)
@@ -110,7 +110,7 @@ def gen_opis_slowny_abcd(rng):
     subtype="pf",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 3",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 3",
 )
 def gen_redukcja_pf(rng):
     # W = 3x(x - a) - (x^2 - bx) = 3x^2 - 3ax - x^2 + bx = 2x^2 + (b - 3a)x
@@ -157,7 +157,7 @@ def gen_redukcja_pf(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Czerwiec 2023 zad. 16",
+    cke_ref="Styl CKE – CKE Czerwiec 2023 zad. 16",
 )
 def gen_wyrazenia_obwod_2pkt(rng):
     # Trójkąt ma boki: x, 2x - a oraz x + b. Zapisz obwód w najprostszej postaci i oblicz boki dla obwodu L albo wartość dla x=k.
@@ -203,7 +203,7 @@ def gen_wyrazenia_obwod_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Próbny 2021 zad. 17",
+    cke_ref="Styl CKE – CKE Próbny 2021 zad. 17",
 )
 def gen_uzasadnij_kolejne_liczby_3pkt(rng):
     # Uzasadnij, że suma czterech kolejnych liczb nieparzystych jest podzielna przez 8 (lub trzech kolejnych parzystych przez 6)

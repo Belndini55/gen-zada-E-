@@ -19,22 +19,25 @@ from e8_generator.engine import (
     compute_config_topic_probabilities,
     generate_exam_sheet,
     replace_single_task,
+    reset_recent_history,
 )
 from e8_generator.generators import REGISTRY
+from e8_generator.gui.styles import DARK_STYLESHEET, LIGHT_STYLESHEET, get_stylesheet
+from e8_generator.math_text import to_qt_html
 from e8_generator.models import CLOSED_SUBTYPES, TOPICS, ExamConfig
 from e8_generator.pdf_exporter import build_exam_pdf_bytes, build_key_pdf_bytes
 
 
 class TestE8Generator(unittest.TestCase):
     def test_all_topics_have_closed_and_open_templates(self):
-        self.assertGreaterEqual(len(REGISTRY), 84)
+        self.assertGreaterEqual(len(REGISTRY), 145)
         for topic in TOPICS:
             t_closed = [t for t in REGISTRY if t.topic_id == topic.id and t.points == 1]
             t_open2 = [t for t in REGISTRY if t.topic_id == topic.id and t.points == 2]
             t_open3 = [t for t in REGISTRY if t.topic_id == topic.id and t.points == 3]
-            self.assertGreaterEqual(len(t_closed), 3, f"Za mało zadań zamkniętych w dziale {topic.id}")
-            self.assertGreaterEqual(len(t_open2), 1, f"Brak zadań 2-pkt w dziale {topic.id}")
-            self.assertGreaterEqual(len(t_open3), 1, f"Brak zadań 3-pkt w dziale {topic.id}")
+            self.assertGreaterEqual(len(t_closed), 4, f"Za mało zadań zamkniętych w dziale {topic.id}")
+            self.assertGreaterEqual(len(t_open2), 2, f"Za mało zadań 2-pkt w dziale {topic.id}")
+            self.assertGreaterEqual(len(t_open3), 2, f"Za mało zadań 3-pkt w dziale {topic.id}")
 
     def test_every_template_randomized_stability_and_diagrams(self):
         rng = random.Random(12345)
@@ -206,6 +209,37 @@ class TestE8Generator(unittest.TestCase):
             self.assertEqual(len(sheet.tasks), 5)
             for t in sheet.tasks:
                 self.assertEqual(t.subtype, st)
+
+    def test_consecutive_sheets_generate_fresh_non_identical_tasks(self):
+        reset_recent_history()
+        s1 = generate_exam_sheet(ExamConfig(include_diagrams=False))
+        s2 = generate_exam_sheet(ExamConfig(include_diagrams=False))
+        s3 = generate_exam_sheet(ExamConfig(include_diagrams=False))
+
+        stems_all = [(t.stem, t.command) for sh in (s1, s2, s3) for t in sh.tasks]
+        self.assertEqual(len(stems_all), 60)
+        self.assertEqual(len(set(stems_all)), 60, "Wykryto identyczną treść zadania w 3 kolejnych arkuszach!")
+
+        ids1 = {t.template_id for t in s1.tasks}
+        ids2 = {t.template_id for t in s2.tasks}
+        self.assertEqual(len(ids1 & ids2), 0, "Dwa kolejne arkusze powtórzyły ten sam szablon zadania!")
+
+        # Z jawnym seedem generowanie nadal musi być deterministyczne
+        det_a = generate_exam_sheet(ExamConfig(seed=2026, include_diagrams=False))
+        det_b = generate_exam_sheet(ExamConfig(seed=2026, include_diagrams=False))
+        self.assertEqual([t.stem for t in det_a.tasks], [t.stem for t in det_b.tasks])
+
+    def test_dark_and_light_stylesheets_and_math_color(self):
+        self.assertEqual(get_stylesheet(False), LIGHT_STYLESHEET)
+        self.assertEqual(get_stylesheet(True), DARK_STYLESHEET)
+        self.assertIn("#0F172A", DARK_STYLESHEET)
+        self.assertIn("#A3E635", DARK_STYLESHEET)
+
+        html_light = to_qt_html(r"Ułamek $\frac{3}{7}$", color="#0F172A")
+        html_dark = to_qt_html(r"Ułamek $\frac{3}{7}$", color="#F1F5F9")
+        self.assertIn("data:image/png;base64,", html_light)
+        self.assertIn("data:image/png;base64,", html_dark)
+        self.assertNotEqual(html_light, html_dark)
 
 
 if __name__ == "__main__":

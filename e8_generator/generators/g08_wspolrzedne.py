@@ -15,7 +15,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2022 zad. 12",
+    cke_ref="Styl CKE – CKE Maj 2022 zad. 12",
 )
 def gen_srodek_odcinka_abcd(rng):
     ax = rng.randint(-7, 2)
@@ -65,7 +65,7 @@ def gen_srodek_odcinka_abcd(rng):
     subtype="pf",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 11",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 11",
     has_diagram=True,
 )
 def gen_rownoleglobok_pf(rng):
@@ -134,7 +134,7 @@ def gen_rownoleglobok_pf(rng):
     subtype="ab_cd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Czerwiec 2022 zad. 11",
+    cke_ref="Styl CKE – CKE Czerwiec 2022 zad. 11",
 )
 def gen_wspolrzedne_ab_cd(rng):
     # Odległość między dwoma punktami z Pitagorasa (trójka pitagorejska 3-4-5 lub 6-8-10 lub 5-12-13)
@@ -193,7 +193,7 @@ def gen_wspolrzedne_ab_cd(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2020 zad. 17",
+    cke_ref="Styl CKE – CKE Maj 2020 zad. 17",
     has_diagram=True,
 )
 def gen_pole_trojkata_uklad_2pkt(rng):
@@ -263,7 +263,7 @@ def gen_pole_trojkata_uklad_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Czerwiec 2024 zad. 18",
+    cke_ref="Styl CKE – CKE Czerwiec 2024 zad. 18",
     has_diagram=True,
 )
 def gen_trapez_uklad_3pkt(rng):

@@ -12,7 +12,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2022 zad. 11",
+    cke_ref="Styl CKE – CKE Maj 2022 zad. 11",
 )
 def gen_rownanie_model_abcd(rng):
     # W trzech pudełkach jest razem total kul. W drugim jest 2 razy więcej niż w pierwszym, a w trzecim o d mniej niż w drugim.
@@ -56,7 +56,7 @@ def gen_rownanie_model_abcd(rng):
     subtype="pf",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2020 zad. 8",
+    cke_ref="Styl CKE – CKE Maj 2020 zad. 8",
 )
 def gen_rownania_pf(rng):
     # Równanie 1: (2x - a)/3 = b -> x = (3b + a)/2
@@ -103,7 +103,7 @@ def gen_rownania_pf(rng):
     subtype="uzasadnienie",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Czerwiec 2023 zad. 9",
+    cke_ref="Styl CKE – CKE Czerwiec 2023 zad. 9",
 )
 def gen_rownanie_naturalne_uzasadnienie(rng):
     # Czy w trzech kolejnych dniach Marcin mógł przeczytać łącznie S stron, jeśli każdego kolejnego dnia czytał o d stron więcej?
@@ -163,7 +163,7 @@ def gen_rownanie_naturalne_uzasadnienie(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: Informator CKE 2025 (zbiorniki z wodą)",
+    cke_ref="Styl CKE – Informator CKE 2025 (zbiorniki z wodą)",
 )
 def gen_zbiorniki_woda_2pkt(rng):
     # W pierwszym zbiorniku było k razy więcej wody niż w drugim (x w drugim, kx w pierwszym).
@@ -207,7 +207,7 @@ def gen_zbiorniki_woda_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Styczeń 2026 zad. 16 / Maj 2023 zad. 18",
+    cke_ref="Styl CKE – CKE Styczeń 2026 zad. 16 / Maj 2023 zad. 18",
 )
 def gen_druzyna_zespoly_3pkt(rng):
     # Drużynę harcerską można podzielić na k1-osobowe zastępy (bez reszty).

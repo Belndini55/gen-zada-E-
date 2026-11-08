@@ -12,7 +12,7 @@ from .base import register_template
     subtype="ab_cd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 7",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 7",
 )
 def gen_potegi_ab_cd(rng):
     # Część 1: iloraz (a*b)^n / b^n = a^n
@@ -77,7 +77,7 @@ def gen_potegi_ab_cd(rng):
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Styczeń 2026 (próbny) zad. 4",
+    cke_ref="Styl CKE – CKE Styczeń 2026 (próbny) zad. 4",
 )
 def gen_notacja_porzadkowanie_abcd(rng):
     # Trzy liczby x, y, z rzędu 10^-3 .. 10^-2
@@ -133,7 +133,7 @@ def gen_notacja_porzadkowanie_abcd(rng):
     subtype="uzasadnienie",
     points=1,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Czerwiec 2023 zad. 6",
+    cke_ref="Styl CKE – CKE Czerwiec 2023 zad. 6",
 )
 def gen_suma_poteg_uzasadnienie(rng):
     # Czy liczba 2^n + 2^n + 2^n + 2^n jest równa 2^(n+2)?
@@ -179,7 +179,7 @@ def gen_suma_poteg_uzasadnienie(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 16",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 16",
 )
 def gen_potegi_oblicz_2pkt(rng):
     base = rng.choice([2, 3])
@@ -221,7 +221,7 @@ def gen_potegi_oblicz_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: Informator CKE 2025 (notacja wykładnicza)",
+    cke_ref="Styl CKE – Informator CKE 2025 (notacja wykładnicza)",
 )
 def gen_notacja_ziarna_3pkt(rng):
     # Masa jednego ziarenka np. 2,5 * 10^-5 kg; worek ma masę M kg, ile ziarenek mieści się w N workach?

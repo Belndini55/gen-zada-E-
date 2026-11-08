@@ -32,11 +32,13 @@ Lokalna aplikacja okienkowa (**100% offline, bez zewnętrznych API**) w języku 
    - **Karta odpowiedzi CKE (OMR)** na końcu arkusza + tabela punktacji zadań otwartych dla nauczyciela/egzaminatora.
    - **Osobny PDF z Kluczem Odpowiedzi i Zasadami Oceniania**: szybki klucz, tabela pokrycia % działów CKE oraz pełne rozwiązania krok po kroku ze schematem punktowania CKE.
 
-3. **84 parametryczne szablony zadań CKE + 13 typów dynamicznych rysunków**
-   - Po **7 odrębnych wzorców zadań** w każdym z 12 działów E8 (miliardy wariantów liczbowych bez powtórzeń).
+3. **148 wielowariantowych generatorów proceduralnych + pamięć antypowtórzeniowa (zawsze nowe zadania)**
+   - **148 odrębnych generatorów zadań** w stylu CKE (po 11–16 w każdym z 12 działów E8), z których każdy losuje niezależnie scenariusz fabularny, strukturę pytania i dane liczbowe – zadania są generowane od podstaw (nie kopiują treści z arkuszy archiwalnych).
+   - **Pamięć antypowtórzeniowa sesji** gwarantuje brak powtarzania tych samych szablonów i treści pomiędzy kolejnymi generowanymi arkuszami (`Ctrl+G`).
    - Dynamiczne rysunki `260 DPI` w kolorystyce CKE: oś liczbowa, układ współrzędnych z kratką, trójkąty prostokątne i równoramienne, proste równoległe z sieczną, trapezy, romb z przekątnymi, okrąg z cięciwą, siatka graniastosłupa ze strzałkami wymiarowymi, akwarium z wodą, diagramy słupkowe, diagramy kołowe z procentami oraz wykresy drogi od czasu $s(t)$.
 
-4. **Wygodne okno graficzne (`PyQt6`)**
+4. **Wygodne okno graficzne (`PyQt6`) ze wsparciem Ciemnego Motywu (Dark Mode)**
+   - **Obsługa motywu Ciemnego, Jasnego (CKE) oraz Systemowego (Auto)** – przełącznik w nagłówku aplikacji, skrót klawiszowy `Ctrl+D`, parametr `--theme dark`, zapamiętywanie wyboru użytkownika oraz opcja *„Łagodna biel kartki”* w podglądzie A4,
    - Żywe etykiety `%` bezpośrednio na checkboxach wszystkich 12 działów aktualizowane natychmiast po każdym kliknięciu,
    - Wbudowany podgląd wydruku A4 (Arkusz CKE oraz Klucz),
    - Wymiana pojedynczego zadania jednym kliknięciem bez utraty pozostałych zadań,
@@ -68,8 +70,11 @@ python main.py
 # Pełny arkusz CKE 2026 (20 zadań, 30 pkt) wg statystyki CKE:
 python main.py --cli --out zestaw_probny --variant "Wersja A" --seed 2026
 
-# Arkusz wzorowany 1:1 na oficjalnej sesji CKE Maj 2026:
+# Zestaw nowych zadań ułożony wg rozkładu działów sesji CKE Maj 2026:
 python main.py --cli --out wzor_maj2026 --distribution mirror_session:cke_2026_05 --seed 101
+
+# Uruchomienie okna graficznego bezpośrednio w ciemnym motywie:
+python main.py --theme dark
 ```
 
 ---

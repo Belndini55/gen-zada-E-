@@ -51,7 +51,7 @@ def run_cli(args: argparse.Namespace) -> int:
     return 0
 
 
-def run_gui() -> int:
+def run_gui(theme_override: str | None = None) -> int:
     import matplotlib
     from PyQt6.QtGui import QFontDatabase
     from PyQt6.QtWidgets import QApplication
@@ -68,7 +68,7 @@ def run_gui() -> int:
         if fpath.exists():
             QFontDatabase.addApplicationFont(str(fpath))
 
-    win = MainWindow()
+    win = MainWindow(initial_theme_mode=theme_override)
     win.show()
     return app.exec()
 
@@ -92,11 +92,17 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=None, help="Opcjonalny numer zestawu (seed)")
     parser.add_argument("--no-cover", action="store_true", help="Pomiń stronę tytułową CKE")
     parser.add_argument("--no-answer-card", action="store_true", help="Pomiń Kartę Odpowiedzi na końcu arkusza")
+    parser.add_argument(
+        "--theme",
+        choices=["system", "light", "dark"],
+        default=None,
+        help="Wymuś motyw interfejsu graficznego (system / light / dark)",
+    )
 
     args = parser.parse_args()
     if args.cli:
         return run_cli(args)
-    return run_gui()
+    return run_gui(theme_override=args.theme)
 
 
 if __name__ == "__main__":

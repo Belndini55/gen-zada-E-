@@ -14,7 +14,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: Informator CKE 2025 zad. 1",
+    cke_ref="Styl CKE – Informator CKE 2025 zad. 1",
 )
 def gen_zegar_opoznienie_abcd(rng):
     # Zegar spóźnia się o k minut w ciągu każdej godziny (stałe tempo). Ustawiono o godz. H0:00. Którą godzinę wskaże, gdy naprawdę będzie H1:M1?
@@ -72,7 +72,7 @@ def gen_zegar_opoznienie_abcd(rng):
     subtype="abcd",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Grudzień 2024 zad. 14",
+    cke_ref="Styl CKE – CKE Grudzień 2024 zad. 14",
 )
 def gen_pomiar_odcinkowy_abcd(rng):
     # Samochód przejechał s km w t minut. Jaka była średnia prędkość w km/h?
@@ -118,7 +118,7 @@ def gen_pomiar_odcinkowy_abcd(rng):
     subtype="pf",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 10",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 10",
 )
 def gen_rowerzysta_pf(rng):
     # Rowerzysta jedzie ze stałą prędkością v km/h (np. 18 lub 36 km/h -> 5 lub 10 m/s)
@@ -162,7 +162,7 @@ def gen_rowerzysta_pf(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 17 / Maj 2022 zad. 17",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 17 / Maj 2022 zad. 17",
 )
 def gen_pociag_dlugosc_2pkt(rng):
     # Pociąg przebył ze stałą prędkością drogę S metrów w czasie t1 sekund.
@@ -206,7 +206,7 @@ def gen_pociag_dlugosc_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 18",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 18",
 )
 def gen_wycieczka_rowerowa_3pkt(rng):
     # Grupa turystów wyruszyła o godz. H0:M0 na trasę o długości D km.

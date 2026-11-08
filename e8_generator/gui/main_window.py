@@ -50,20 +50,26 @@ from ..models import (
 from ..pdf_exporter import build_exam_pdf_bytes, build_key_pdf_bytes
 from .archive_widget import CKEArchiveStatsWidget
 from .preview_widget import PdfPreviewWidget
-from .styles import APP_STYLESHEET
+from .styles import (
+    detect_system_dark_mode,
+    get_stylesheet,
+    load_saved_theme_mode,
+    save_theme_mode,
+)
 from .task_list_widget import TaskListWidget
 
 
 class MainWindow(QMainWindow):
     """Główne okno programu z formularzem konfiguracji CKE po lewej i podglądem PDF / statystyką po prawej."""
 
-    def __init__(self):
+    def __init__(self, initial_theme_mode: Optional[str] = None):
         super().__init__()
         self.setWindowTitle("Generator Zadań E8 – Matematyka (wzorzec i statystyka CKE 2019–2026)")
         self.resize(1420, 900)
         self.setMinimumSize(1080, 700)
-        self.setStyleSheet(APP_STYLESHEET)
 
+        self._theme_mode: str = initial_theme_mode or load_saved_theme_mode()
+        self._is_dark: bool = False
         self._current_sheet: Optional[ExamSheet] = None
         self._exam_pdf_bytes: Optional[bytes] = None
         self._key_pdf_bytes: Optional[bytes] = None
@@ -74,6 +80,7 @@ class MainWindow(QMainWindow):
 
         self._build_ui()
         self._setup_shortcuts()
+        self.apply_theme_mode(self._theme_mode, persist=(initial_theme_mode is None))
         self._refresh_live_topic_percentages()
 
         # Wygeneruj od razu pierwszy przykładowy arkusz po uruchomieniu
@@ -108,20 +115,36 @@ class MainWindow(QMainWindow):
         form_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         form_body = QWidget()
+        form_body.setObjectName("FormScrollBody")
         form_lay = QVBoxLayout(form_body)
         form_lay.setContentsMargins(4, 2, 16, 8)
         form_lay.setSpacing(8)
 
-        # Nagłówek aplikacji w lewym panelu
+        # Nagłówek aplikacji + przełącznik motywu (Jasny / Ciemny / Systemowy)
+        hdr_row = QHBoxLayout()
+        hdr_row.setSpacing(8)
         app_hdr = QLabel("Generator Zadań E8 – Matematyka")
         app_hdr.setObjectName("HeaderTitle")
+        hdr_row.addWidget(app_hdr, 1)
+
+        self._combo_theme = QComboBox()
+        self._combo_theme.setToolTip("Wybierz motyw interfejsu: Jasny, Ciemny lub Systemowy (skrót: Ctrl+D)")
+        self._combo_theme.addItem("Motyw: Systemowy", userData="system")
+        self._combo_theme.addItem("Motyw: Jasny (CKE)", userData="light")
+        self._combo_theme.addItem("Motyw: Ciemny", userData="dark")
+        idx_theme = self._combo_theme.findData(self._theme_mode)
+        if idx_theme >= 0:
+            self._combo_theme.setCurrentIndex(idx_theme)
+        self._combo_theme.currentIndexChanged.connect(self._on_theme_combo_changed)
+        hdr_row.addWidget(self._combo_theme)
+
         app_sub = QLabel(
-            "Autentyczna szata graficzna CKE (OMAP-100) oraz rozkład prawdopodobieństwa działów "
-            "wyznaczony z 12 oficjalnych arkuszy CKE (2019–2026)."
+            "Generuje za każdym razem nowe, autorskie zadania w szacie graficznej CKE (OMAP-100) "
+            "oraz wg empirycznego prawdopodobieństwa działów z 12 arkuszy CKE (2019–2026)."
         )
         app_sub.setObjectName("MutedLabel")
         app_sub.setWordWrap(True)
-        form_lay.addWidget(app_hdr)
+        form_lay.addLayout(hdr_row)
         form_lay.addWidget(app_sub)
 
         # 1. Układ arkusza (Preset)
@@ -159,7 +182,7 @@ class MainWindow(QMainWindow):
         )
         for sess in HISTORICAL_CKE_EXAMS:
             self._combo_dist.addItem(
-                f"Wzorzec 1:1 sesji: {sess.name} ({sess.total_tasks} zad.)",
+                f"Układ działów sesji: {sess.name} (nowe zadania)",
                 userData=f"mirror_session:{sess.session_id}",
             )
         self._combo_dist.addItem(
@@ -172,7 +195,7 @@ class MainWindow(QMainWindow):
 
         self._chk_all_topics = QCheckBox("Cały materiał E8 (wszystkie 12 działów wg wag CKE)")
         self._chk_all_topics.setChecked(True)
-        self._chk_all_topics.setStyleSheet("font-weight: 700; color: #3D5E18;")
+        self._chk_all_topics.setObjectName("AccentCheckBox")
         self._chk_all_topics.toggled.connect(self._on_all_topics_toggled)
         gt_lay.addWidget(self._chk_all_topics)
 
@@ -379,19 +402,19 @@ class MainWindow(QMainWindow):
         self._lbl_status.setObjectName("SheetStatusLabel")
         eb_lay.addWidget(self._lbl_status, 1)
 
-        btn_save_exam = QPushButton("Zapisz Arkusz PDF...")
+        btn_save_exam = QPushButton("Zapisz Arkusz PDF")
         btn_save_exam.setObjectName("ExportBtn")
         btn_save_exam.setToolTip("Zapisz plik PDF z samym arkuszem zadań dla ucznia (szata CKE OMAP-100)")
         btn_save_exam.clicked.connect(self.save_exam_pdf)
         eb_lay.addWidget(btn_save_exam)
 
-        btn_save_key = QPushButton("Zapisz Klucz PDF...")
+        btn_save_key = QPushButton("Zapisz Klucz PDF")
         btn_save_key.setObjectName("ExportBtn")
         btn_save_key.setToolTip("Zapisz plik PDF z kluczem odpowiedzi, rozkładem % CKE i rozwiązaniami krok po kroku")
         btn_save_key.clicked.connect(self.save_key_pdf)
         eb_lay.addWidget(btn_save_key)
 
-        btn_save_both = QPushButton("Zapisz Komplet (2×PDF)...")
+        btn_save_both = QPushButton("Zapisz Komplet (2×PDF)")
         btn_save_both.setObjectName("ExportBundleBtn")
         btn_save_both.setToolTip("Zapisz jednocześnie dwa pliki PDF: arkusz zadań CKE oraz klucz odpowiedzi")
         btn_save_both.clicked.connect(self.save_both_pdfs)
@@ -431,6 +454,49 @@ class MainWindow(QMainWindow):
         act_save.setShortcut(QKeySequence("Ctrl+S"))
         act_save.triggered.connect(self.save_both_pdfs)
         self.addAction(act_save)
+
+        act_theme = QAction("Przełącz motyw jasny/ciemny", self)
+        act_theme.setShortcut(QKeySequence("Ctrl+D"))
+        act_theme.triggered.connect(self.toggle_dark_mode)
+        self.addAction(act_theme)
+
+    # ------------------------------------------------------------------
+    # Obsługa motywu jasnego / ciemnego / systemowego
+    # ------------------------------------------------------------------
+    def _on_theme_combo_changed(self, _index: int) -> None:
+        mode = str(self._combo_theme.currentData() or "system")
+        self.apply_theme_mode(mode, persist=True)
+
+    def toggle_dark_mode(self) -> None:
+        new_mode = "light" if self._is_dark else "dark"
+        self.apply_theme_mode(new_mode, persist=True)
+
+    def apply_theme_mode(self, mode: str, persist: bool = True) -> None:
+        if mode not in ("system", "light", "dark"):
+            mode = "system"
+        self._theme_mode = mode
+        if persist:
+            save_theme_mode(mode)
+
+        idx = self._combo_theme.findData(mode)
+        if idx >= 0 and self._combo_theme.currentIndex() != idx:
+            self._combo_theme.blockSignals(True)
+            self._combo_theme.setCurrentIndex(idx)
+            self._combo_theme.blockSignals(False)
+
+        if mode == "dark":
+            is_dark = True
+        elif mode == "light":
+            is_dark = False
+        else:
+            is_dark = detect_system_dark_mode()
+
+        self._is_dark = is_dark
+        self.setStyleSheet(get_stylesheet(is_dark))
+        self._exam_preview.set_dark_mode(is_dark)
+        self._key_preview.set_dark_mode(is_dark)
+        self._task_list.set_dark_mode(is_dark)
+        self._archive_stats.set_dark_mode(is_dark)
 
     # ------------------------------------------------------------------
     # Dynamiczne przeliczanie procentów działów CKE + równej redystrybucji
@@ -531,7 +597,7 @@ class MainWindow(QMainWindow):
                     self._spin_open3.setValue(o3_cnt)
                     self._spin_duration.setValue(sess.duration_min)
                     self._edit_exam_code.setText(sess.code)
-                    self._edit_subtitle.setText(f"Arkusz wzorowany 1:1 na sesji {sess.name}")
+                    self._edit_subtitle.setText(f"Zestaw nowych zadań wg układu sesji {sess.name}")
                 finally:
                     self._updating_preset_fields = False
                 self._update_summary_badge()
@@ -722,11 +788,16 @@ class MainWindow(QMainWindow):
             len(sheet.tasks),
         )
 
-        self._lbl_status.setText(
+        full_status = (
             f"{sheet.config.exam_code} · {sheet.config.variant_code} · Zestaw #{sheet.used_seed} · "
             f"{len(sheet.tasks)} zadań ({len(sheet.closed_tasks)} zamkn. + {len(sheet.open_tasks)} otw.) · "
             f"{sheet.total_points} pkt"
         )
+        self._lbl_status.setText(
+            f"{sheet.config.exam_code} · #{sheet.used_seed} · "
+            f"{len(sheet.tasks)} zad. ({sheet.total_points} pkt)"
+        )
+        self._lbl_status.setToolTip(full_status)
 
     # ------------------------------------------------------------------
     # Zapisywanie wygenerowanych plików PDF

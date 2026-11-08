@@ -14,7 +14,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2022 zad. 3",
+    cke_ref="Styl CKE – CKE Maj 2022 zad. 3",
 )
 def gen_liczby_trzycyfrowe_suma_cyfr_abcd(rng):
     # Spośród wszystkich liczb trzycyfrowych o sumie cyfr równej S (gdzie 4 <= S <= 9) wybrano największą i najmniejszą
@@ -64,7 +64,7 @@ def gen_liczby_trzycyfrowe_suma_cyfr_abcd(rng):
     subtype="pf",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 15",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 15",
 )
 def gen_kostka_pf(rng):
     # Rzut standardową sześcienną kostką
@@ -105,7 +105,7 @@ def gen_kostka_pf(rng):
     subtype="ab_cd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2024 zad. 14",
+    cke_ref="Styl CKE – CKE Maj 2024 zad. 14",
 )
 def gen_kombinatoryka_ab_cd(rng):
     # Zbiór k cyfr niezerowych, np. {1, 2, 3, 4, 5} (k=5 lub k=4 lub k=6)
@@ -164,7 +164,7 @@ def gen_kombinatoryka_ab_cd(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Czerwiec 2024 zad. 16",
+    cke_ref="Styl CKE – CKE Czerwiec 2024 zad. 16",
 )
 def gen_prawdop_tabela_2pkt(rng):
     scores = [10, 15, 20, 25, 30]
@@ -216,7 +216,7 @@ def gen_prawdop_tabela_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Maj 2020 zad. 20",
+    cke_ref="Styl CKE – CKE Maj 2020 zad. 20",
 )
 def gen_dokladanie_kul_3pkt(rng):
     # W pudełku jest W kul białych i B kul czarnych. Ile kul białych (x) należy dołożyć, aby P(biała) = p/q?

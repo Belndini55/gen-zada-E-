@@ -14,7 +14,7 @@ from .base import register_template
     subtype="pf",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 1",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 1",
 )
 def gen_przepis_kulinarny_pf(rng):
     # Składniki na N gofrów (np. 8 lub 12)
@@ -76,7 +76,7 @@ def gen_przepis_kulinarny_pf(rng):
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 3",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 3",
 )
 def gen_trzy_sklepy_abcd(rng):
     item, item_gen = rng.choice([
@@ -146,7 +146,7 @@ def gen_trzy_sklepy_abcd(rng):
     subtype="ab_cd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2024 zad. 3",
+    cke_ref="Styl CKE – CKE Maj 2024 zad. 3",
 )
 def gen_procenty_ab_cd(rng):
     # Zdanie 1: Liczba X stanowi P% liczby Y
@@ -209,7 +209,7 @@ def gen_procenty_ab_cd(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Czerwiec 2025 zad. 16",
+    cke_ref="Styl CKE – CKE Czerwiec 2025 zad. 16",
 )
 def gen_uzasadnij_ceny_sklepy_2pkt(rng):
     # W sklepie B cena stanowi p1% ceny w A, a w sklepie C stanowi p2% ceny w B (np. 80% i 120% -> 0,96x < x)
@@ -250,7 +250,7 @@ def gen_uzasadnij_ceny_sklepy_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Maj 2020 zad. 18",
+    cke_ref="Styl CKE – CKE Maj 2020 zad. 18",
 )
 def gen_dwukrotna_zmiana_ceny_3pkt(rng):
     # Cena początkowa x -> podwyżka o p1% -> obniżka o p2% -> końcowa cena K zł. Oblicz x!

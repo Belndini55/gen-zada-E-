@@ -13,7 +13,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Czerwiec 2025 zad. 1",
+    cke_ref="Styl CKE – CKE Czerwiec 2025 zad. 1",
 )
 def gen_srednia_ksiazka_abcd(rng):
     avg = rng.choice([45, 50, 55, 60, 65])
@@ -69,7 +69,7 @@ def gen_srednia_ksiazka_abcd(rng):
     subtype="pf",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Styczeń 2026 zad. 1",
+    cke_ref="Styl CKE – CKE Styczeń 2026 zad. 1",
     has_diagram=True,
 )
 def gen_diagram_kwartaly_pf(rng):
@@ -140,7 +140,7 @@ def gen_diagram_kwartaly_pf(rng):
     subtype="ab_cd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Czerwiec 2021 zad. 4",
+    cke_ref="Styl CKE – CKE Czerwiec 2021 zad. 4",
 )
 def gen_statystyka_ab_cd(rng):
     # 6 wyników nieuporządkowanych, suma podzielna przez 6
@@ -205,7 +205,7 @@ def gen_statystyka_ab_cd(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2020 zad. 16",
+    cke_ref="Styl CKE – CKE Maj 2020 zad. 16",
 )
 def gen_srednia_dolaczenie_2pkt(rng):
     n1 = rng.choice([6, 8, 9])
@@ -249,7 +249,7 @@ def gen_srednia_dolaczenie_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2024 zad. 17",
+    cke_ref="Styl CKE – CKE Maj 2024 zad. 17",
     has_diagram=True,
 )
 def gen_diagram_kino_3pkt(rng):

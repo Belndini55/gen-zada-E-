@@ -1,13 +1,15 @@
-"""Widżet podglądu stron A4 dokumentu PDF (renderowanie za pomocą pypdfium2)."""
+"""Widżet podglądu stron A4 dokumentu PDF (renderowanie za pomocą pypdfium2) ze wsparciem ciemnego motywu."""
 
 from __future__ import annotations
 
 from typing import List, Optional
 
+from PIL import ImageEnhance
 import pypdfium2 as pdfium
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -19,19 +21,20 @@ from PyQt6.QtWidgets import (
 
 
 class PdfPreviewWidget(QWidget):
-    """Przewijany podgląd kartek A4 dokumentu PDF z regulacją powiększenia."""
+    """Przewijany podgląd kartek A4 dokumentu PDF z regulacją powiększenia i trybem ciemnego tła."""
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self._pdf_bytes: Optional[bytes] = None
-        self._zoom: float = 1.25  # 1.0 ~ ok. 100% ekranowe
+        self._zoom: float = 1.25
+        self._is_dark: bool = False
         self._page_labels: List[QLabel] = []
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # Pasek narzędzi powiększenia
+        # Pasek narzędzi powiększenia i komfortu oczu
         toolbar = QFrame()
         toolbar.setObjectName("PreviewToolbar")
         tb_lay = QHBoxLayout(toolbar)
@@ -42,6 +45,13 @@ class PdfPreviewWidget(QWidget):
         self._page_info_lbl.setObjectName("MutedLabel")
         tb_lay.addWidget(self._page_info_lbl)
         tb_lay.addStretch(1)
+
+        self._chk_dim_paper = QCheckBox("Łagodna biel kartki")
+        self._chk_dim_paper.setToolTip(
+            "Przyciemnia jaskrawą biel arkusza w podglądzie nocnym (nie wpływa na kolory eksportowanego pliku PDF)."
+        )
+        self._chk_dim_paper.toggled.connect(self._rerender_pages)
+        tb_lay.addWidget(self._chk_dim_paper)
 
         btn_zoom_out = QPushButton("− Pomniejsz")
         btn_zoom_out.setObjectName("SmallGhostBtn")
@@ -68,10 +78,8 @@ class PdfPreviewWidget(QWidget):
         # Obszar przewijania kartek A4
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
-        self._scroll.setStyleSheet("QScrollArea { background-color: #CBD5E1; border: none; }")
 
         self._pages_container = QWidget()
-        self._pages_container.setStyleSheet("background-color: #CBD5E1;")
         self._pages_layout = QVBoxLayout(self._pages_container)
         self._pages_layout.setContentsMargins(20, 18, 20, 24)
         self._pages_layout.setSpacing(18)
@@ -79,6 +87,27 @@ class PdfPreviewWidget(QWidget):
 
         self._scroll.setWidget(self._pages_container)
         root.addWidget(self._scroll, 1)
+        self._apply_canvas_style()
+
+    def _canvas_bg(self) -> str:
+        return "#0B1120" if self._is_dark else "#CBD5E1"
+
+    def _card_border(self) -> str:
+        return "#334155" if self._is_dark else "#94A3B8"
+
+    def _apply_canvas_style(self) -> None:
+        bg = self._canvas_bg()
+        self._scroll.setStyleSheet(f"QScrollArea {{ background-color: {bg}; border: none; }}")
+        if self._pages_container is not None:
+            self._pages_container.setStyleSheet(f"background-color: {bg};")
+        border = self._card_border()
+        for card in self._page_labels:
+            card.setStyleSheet(f"background-color: #FFFFFF; border: 1px solid {border}; padding: 0px;")
+
+    def set_dark_mode(self, is_dark: bool) -> None:
+        if self._is_dark != is_dark:
+            self._is_dark = is_dark
+            self._apply_canvas_style()
 
     def set_pdf_bytes(self, pdf_bytes: bytes) -> None:
         self._pdf_bytes = pdf_bytes
@@ -102,14 +131,18 @@ class PdfPreviewWidget(QWidget):
         pct = int(round((self._zoom / 1.25) * 100))
         self._zoom_lbl.setText(f"{pct}%")
 
+        bg = self._canvas_bg()
+        border = self._card_border()
         new_container = QWidget()
-        new_container.setStyleSheet("background-color: #CBD5E1;")
+        new_container.setStyleSheet(f"background-color: {bg};")
         pages_layout = QVBoxLayout(new_container)
         pages_layout.setContentsMargins(20, 18, 20, 24)
         pages_layout.setSpacing(18)
+        self._page_labels = []
 
         if not self._pdf_bytes:
             self._page_info_lbl.setText("Brak wygenerowanego dokumentu")
+            self._pages_container = new_container
             self._scroll.setWidget(new_container)
             return
 
@@ -121,23 +154,29 @@ class PdfPreviewWidget(QWidget):
             else ("strony" if 2 <= (n_pages % 10) <= 4 and not (12 <= (n_pages % 100) <= 14) else "stron")
         )
         self._page_info_lbl.setText(f"Podgląd wydruku A4: {n_pages} {strony_word}")
+        dim_paper = self._chk_dim_paper.isChecked()
 
         for idx in range(n_pages):
             page = doc[idx]
             bmp = page.render(scale=self._zoom)
-            pil_img = bmp.to_pil().convert("RGBA")
-            raw = pil_img.tobytes("raw", "RGBA")
+            pil_img = bmp.to_pil().convert("RGB")
+            if dim_paper:
+                pil_img = ImageEnhance.Brightness(pil_img).enhance(0.86)
+            pil_rgba = pil_img.convert("RGBA")
+            raw = pil_rgba.tobytes("raw", "RGBA")
             qimg = QImage(
-                raw, pil_img.width, pil_img.height, pil_img.width * 4, QImage.Format.Format_RGBA8888
+                raw, pil_rgba.width, pil_rgba.height, pil_rgba.width * 4, QImage.Format.Format_RGBA8888
             ).copy()
             pix = QPixmap.fromImage(qimg)
 
             card = QLabel()
             card.setPixmap(pix)
             card.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            card.setStyleSheet("background-color: #FFFFFF; border: 1px solid #94A3B8; padding: 0px;")
+            card.setStyleSheet(f"background-color: #FFFFFF; border: 1px solid {border}; padding: 0px;")
             card.setFixedSize(pix.width() + 2, pix.height() + 2)
             pages_layout.addWidget(card, 0, Qt.AlignmentFlag.AlignHCenter)
+            self._page_labels.append(card)
 
         pages_layout.addStretch(1)
+        self._pages_container = new_container
         self._scroll.setWidget(new_container)

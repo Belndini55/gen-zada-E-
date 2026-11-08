@@ -15,7 +15,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Czerwiec 2024 zad. 1",
+    cke_ref="Styl CKE – CKE Czerwiec 2024 zad. 1",
 )
 def gen_temperatury(rng):
     # Cztery miejscowości górskie i cztery różne temperatury ujemne/dodatnie
@@ -79,7 +79,7 @@ def gen_temperatury(rng):
     subtype="pf",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 2",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 2",
     has_diagram=True,
 )
 def gen_os_liczbowa_pf(rng):
@@ -161,7 +161,7 @@ def gen_os_liczbowa_pf(rng):
     subtype="uzasadnienie",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2022 zad. 4",
+    cke_ref="Styl CKE – CKE Maj 2022 zad. 4",
 )
 def gen_podzielnosc_uzasadnienie(rng):
     div = rng.choice([3, 9])
@@ -220,7 +220,7 @@ def gen_podzielnosc_uzasadnienie(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Czerwiec 2020 zad. 16",
+    cke_ref="Styl CKE – CKE Czerwiec 2020 zad. 16",
 )
 def gen_sloiki_sok_2pkt(rng):
     # Babcia przygotowała sok malinowy i rozlała do małych i dużych butelek
@@ -269,7 +269,7 @@ def gen_sloiki_sok_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Kwiecień 2019 zad. 17",
+    cke_ref="Styl CKE – CKE Kwiecień 2019 zad. 17",
 )
 def gen_ulamki_oszczednosci_3pkt(rng):
     # Tomek wydał 1/a oszczędności na plecak, potem b/c POZOSTAŁEJ kwoty na buty, zostało mu R zł.

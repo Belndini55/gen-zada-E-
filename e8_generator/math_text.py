@@ -272,7 +272,7 @@ def to_rl_markup(text: str, font_size: float = 10.0) -> Tuple[str, float]:
     return "".join(out), max_h
 
 
-def to_qt_html(text: str, font_size: float = 10.5) -> str:
+def to_qt_html(text: str, font_size: float = 10.5, color: str = "#111827") -> str:
     """Konwertuje tekst z formułami $...$ na bogaty HTML wyświetlany w kartach zadań PyQt6."""
     if not text:
         return ""
@@ -286,9 +286,9 @@ def to_qt_html(text: str, font_size: float = 10.5) -> str:
         if tok.startswith("$") and tok.endswith("$") and len(tok) >= 2:
             inner = tok[1:-1]
             if _needs_image_render(inner):
-                _, w_pt, h_pt, b64 = _render_mathtext_png(inner, font_size)
-                w_px = max(8, int(round(w_pt * 1.38)))
-                h_px = max(8, int(round(h_pt * 1.38)))
+                _, w_pt, h_pt, b64 = _render_mathtext_png(inner, font_size, color=color)
+                w_px = max(10, int(round(w_pt * 1.54)))
+                h_px = max(10, int(round(h_pt * 1.54)))
                 out.append(
                     f'<img src="data:image/png;base64,{b64}" width="{w_px}" height="{h_px}" style="vertical-align: middle;"/>'
                 )

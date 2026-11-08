@@ -38,6 +38,7 @@ class CKEArchiveStatsWidget(QWidget):
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self._is_dark: bool = False
         self._active_probs: Dict[str, float] = {
             t.id: EMPIRICAL_STATS[t.id].base_probability for t in TOPICS
         }
@@ -47,6 +48,11 @@ class CKEArchiveStatsWidget(QWidget):
         self._build_ui()
         self._populate_session_table()
         self.refresh_probabilities(self._active_probs, None)
+
+    def set_dark_mode(self, is_dark: bool) -> None:
+        if self._is_dark != is_dark:
+            self._is_dark = is_dark
+            self.refresh_probabilities(self._active_probs, self._current_sheet, self._tasks_per_sheet_hint)
 
     def _build_ui(self) -> None:
         lay = QVBoxLayout(self)
@@ -134,9 +140,11 @@ class CKEArchiveStatsWidget(QWidget):
         self._combo_session.currentIndexChanged.connect(self._populate_session_table)
         arch_bar.addWidget(self._combo_session, 1)
 
-        self._btn_mirror = QPushButton("Generuj nowy arkusz 1:1 wg tej sesji CKE")
-        self._btn_mirror.setObjectName("PrimaryGenerateBtn")
-        self._btn_mirror.setStyleSheet("padding: 6px 13px; font-size: 12.5px;")
+        self._btn_mirror = QPushButton("Generuj nowe zadania wg układu tej sesji")
+        self._btn_mirror.setObjectName("CompactPrimaryBtn")
+        self._btn_mirror.setToolTip(
+            "Układa zupełnie nowe, losowo wygenerowane zadania z zachowaniem rozkładu działów i punktacji wybranego arkusza CKE."
+        )
         self._btn_mirror.setCursor(Qt.CursorShape.PointingHandCursor)
         self._btn_mirror.clicked.connect(self._on_mirror_clicked)
         arch_bar.addWidget(self._btn_mirror)
@@ -193,6 +201,9 @@ class CKEArchiveStatsWidget(QWidget):
 
         bold_font = QFont()
         bold_font.setBold(True)
+        muted_fg = QColor("#64748B") if self._is_dark else QColor("#94A3B8")
+        boost_fg = QColor("#A3E635") if self._is_dark else QColor("#3D5E18")
+        hint_fg = QColor("#94A3B8") if self._is_dark else QColor("#64748B")
 
         for row, top in enumerate(TOPICS):
             st = EMPIRICAL_STATS[top.id]
@@ -202,7 +213,7 @@ class CKEArchiveStatsWidget(QWidget):
 
             it_name = QTableWidgetItem(top.short_name)
             if act_p <= 0.0:
-                it_name.setForeground(QColor("#94A3B8"))
+                it_name.setForeground(muted_fg)
             self._tbl_probs.setItem(row, 0, it_name)
 
             base_txt = f"{st.total_tasks}/240  ({base_p * 100:.1f}%)".replace(".", ",")
@@ -213,13 +224,13 @@ class CKEArchiveStatsWidget(QWidget):
             if act_p <= 0.0:
                 act_txt = "0,0% (wykreślony)"
                 it_act = QTableWidgetItem(act_txt)
-                it_act.setForeground(QColor("#94A3B8"))
+                it_act.setForeground(muted_fg)
             elif abs(diff_p) > 1e-4:
                 sign = "+" if diff_p > 0 else ""
                 act_txt = f"{act_p * 100:.2f}% ({sign}{diff_p * 100:.2f}%)".replace(".", ",")
                 it_act = QTableWidgetItem(act_txt)
                 it_act.setFont(bold_font)
-                it_act.setForeground(QColor("#3D5E18"))
+                it_act.setForeground(boost_fg)
             else:
                 act_txt = f"{act_p * 100:.2f}%".replace(".", ",")
                 it_act = QTableWidgetItem(act_txt)
@@ -243,7 +254,7 @@ class CKEArchiveStatsWidget(QWidget):
 
             if self._tbl_probs.item(row, 5) is None:
                 it_mc = QTableWidgetItem("kliknij „Przetestuj”")
-                it_mc.setForeground(QColor("#64748B"))
+                it_mc.setForeground(hint_fg)
                 it_mc.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self._tbl_probs.setItem(row, 5, it_mc)
 
@@ -260,6 +271,8 @@ class CKEArchiveStatsWidget(QWidget):
             for tid, cnt in q.items():
                 totals[tid] += cnt
 
+        ok_fg = QColor("#4ADE80") if self._is_dark else QColor("#166534")
+        norm_fg = QColor("#E2E8F0") if self._is_dark else QColor("#1E293B")
         grand_total = n_sheets * n_tasks
         for row, top in enumerate(TOPICS):
             sim_pct = (totals[top.id] / grand_total) * 100.0
@@ -268,7 +281,7 @@ class CKEArchiveStatsWidget(QWidget):
             txt = f"{sim_pct:.2f}% (błąd {err:.2f}%)".replace(".", ",")
             it = QTableWidgetItem(txt)
             it.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            it.setForeground(QColor("#166534") if err < 0.25 else QColor("#1E293B"))
+            it.setForeground(ok_fg if err < 0.25 else norm_fg)
             self._tbl_probs.setItem(row, 5, it)
 
     def _populate_session_table(self) -> None:

@@ -13,7 +13,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 9",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 9",
 )
 def gen_ostroslup_graniastoslup_abcd(rng):
     n = rng.randint(6, 15)  # n-kąt w podstawie
@@ -60,7 +60,7 @@ def gen_ostroslup_graniastoslup_abcd(rng):
     subtype="pf",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Grudzień 2024 zad. 13",
+    cke_ref="Styl CKE – CKE Grudzień 2024 zad. 13",
 )
 def gen_graniastoslup_pf(rng):
     a = rng.randint(4, 9)
@@ -107,7 +107,7 @@ def gen_graniastoslup_pf(rng):
     subtype="ab_cd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 14",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 14",
 )
 def gen_szescian_ab_cd(rng):
     a = rng.randint(4, 10)
@@ -160,7 +160,7 @@ def gen_szescian_ab_cd(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 19",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 19",
     has_diagram=True,
 )
 def gen_akwarium_2pkt(rng):
@@ -222,7 +222,7 @@ def gen_akwarium_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Maj 2022 zad. 19 / Grudzień 2024 zad. 20",
+    cke_ref="Styl CKE – CKE Maj 2022 zad. 19 / Grudzień 2024 zad. 20",
     has_diagram=True,
 )
 def gen_siatka_graniastoslupa_3pkt(rng):

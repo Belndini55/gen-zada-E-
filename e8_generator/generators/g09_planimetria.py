@@ -15,7 +15,7 @@ from .base import register_template
     subtype="abcd",
     points=1,
     difficulty=1,
-    cke_ref="Wzorzec: CKE Maj 2021 zad. 12",
+    cke_ref="Styl CKE – CKE Maj 2021 zad. 12",
     has_diagram=True,
 )
 def gen_katy_rownolegle_abcd(rng):
@@ -63,7 +63,7 @@ def gen_katy_rownolegle_abcd(rng):
     subtype="abcd",
     points=1,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Grudzień 2024 zad. 15",
+    cke_ref="Styl CKE – CKE Grudzień 2024 zad. 15",
     has_diagram=True,
 )
 def gen_okrag_cieciwa_abcd(rng):
@@ -120,7 +120,7 @@ def gen_okrag_cieciwa_abcd(rng):
     subtype="uzasadnienie",
     points=1,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Maj 2023 zad. 13",
+    cke_ref="Styl CKE – CKE Maj 2023 zad. 13",
 )
 def gen_kwadrat_z_figur_uzasadnienie(rng):
     # Mamy trzy prostokąty o łącznym polu równym polu kwadratu a^2 (np. 49 lub 64 cm^2),
@@ -204,7 +204,7 @@ def gen_kwadrat_z_figur_uzasadnienie(rng):
     subtype="otwarte_2pkt",
     points=2,
     difficulty=2,
-    cke_ref="Wzorzec: CKE Maj 2022 zad. 18",
+    cke_ref="Styl CKE – CKE Maj 2022 zad. 18",
     has_diagram=True,
 )
 def gen_trapez_prostokatny_2pkt(rng):
@@ -266,7 +266,7 @@ def gen_trapez_prostokatny_2pkt(rng):
     subtype="otwarte_3pkt",
     points=3,
     difficulty=3,
-    cke_ref="Wzorzec: CKE Czerwiec 2025 zad. 19",
+    cke_ref="Styl CKE – CKE Czerwiec 2025 zad. 19",
     has_diagram=True,
 )
 def gen_trojkat_rownoramienny_pole_3pkt(rng):
