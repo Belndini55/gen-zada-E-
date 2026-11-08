@@ -11,6 +11,4 @@ build/
 .env
 *.env
 *.local.json
-*secret*
-*apikey*
 image-search/
