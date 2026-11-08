@@ -1,6 +1,6 @@
-# Generator Zadań E8 – Matematyka (wzorzec i statystyka CKE 2019–2026)
+# gen-zadanE8 – Generator Zadań E8 – Matematyka (wzorzec i statystyka CKE 2019–2026)
 
-Lokalna aplikacja okienkowa w języku **Python (`PyQt6`)** do generowania arkuszy egzaminacyjnych, sprawdzianów i zestawów treningowych na poziomie **Egzaminu Ósmoklasisty z matematyki** – w autentycznej szacie graficznej i kolorystyce arkuszy **CKE `OMAP-100`** oraz z empirycznym silnikiem prawdopodobieństwa opartym na **12 oficjalnych arkuszach CKE z lat 2019–2026 (240 zadań)**.
+Lokalna aplikacja okienkowa (**100% offline, bez zewnętrznych API**) w języku **Python (`PyQt6`)** do generowania arkuszy egzaminacyjnych, sprawdzianów i zestawów treningowych na poziomie **Egzaminu Ósmoklasisty z matematyki** – w autentycznej szacie graficznej i kolorystyce arkuszy **CKE `OMAP-100`** oraz z empirycznym silnikiem prawdopodobieństwa opartym na **12 oficjalnych arkuszach CKE z lat 2019–2026 (240 zadań)**.
 
 ---
 
